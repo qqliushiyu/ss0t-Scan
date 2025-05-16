@@ -1,8 +1,0 @@
-ip,status,response_time,mac_address,hostname,os
-192.168.31.1,up,0.0,4c-c6-4c-c6-e4-fc,XiaoQiang,Windows/Linux/MacOS
-192.168.31.152,up,0.0,,DESKTOP-L78THVD,Windows/Linux/MacOS
-192.168.31.68,up,0.0,20-4e-f6-f8-f3-8f,LAPTOP-DCAQHQQ4,Windows/Linux/MacOS
-192.168.31.177,up,0.0,84-ef-18-f2-21-f0,windows7,Windows/Linux/MacOS
-192.168.31.85,up,0.0,c8-b2-9b-88-11-d4,Ty,Windows/Linux/MacOS
-192.168.31.83,up,0.0,34-de-1a-70-f8-fa,USER-ANMIKH985H,Windows/Linux/MacOS
-192.168.31.207,up,0.0,42-39-36-93-1e-a2,vivo-Y35m,Windows/Linux/MacOS

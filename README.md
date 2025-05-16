@@ -74,6 +74,32 @@ pip install -e .
 
 ## 💻 使用方法
 
+### 截图
+
+#### ![52bcb83a9b8a5f0d5d1453fc1665313a](./assets/52bcb83a9b8a5f0d5d1453fc1665313a-1747396433273-2.png)
+
+![image-20250516195523873](./assets/image-20250516195523873.png)
+
+![image-20250516195559957](./assets/image-20250516195559957.png)
+
+![image-20250516195653448](./assets/image-20250516195653448.png)
+
+![image-20250516195758138](./assets/image-20250516195758138.png)
+
+![image-20250516195845626](./assets/image-20250516195845626.png)
+
+![image-20250516195914724](./assets/image-20250516195914724.png)
+
+![image-20250516200143762](./assets/image-20250516200143762.png)
+
+![image-20250516200215106](./assets/image-20250516200215106.png)
+
+![image-20250516200255134](./assets/image-20250516200255134.png)
+
+![eda86ca07410a4eab9bad0f7a34aa5d7](./assets/eda86ca07410a4eab9bad0f7a34aa5d7.png)
+
+![image-20250516200417192](./assets/image-20250516200417192.png)
+
 ### 启动图形界面
 
 ```bash

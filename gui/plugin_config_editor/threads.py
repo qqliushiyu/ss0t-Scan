@@ -17,7 +17,7 @@ from typing import Dict, List, Any, Optional, Tuple
 from PyQt5.QtCore import QThread, pyqtSignal
 
 # 配置日志
-logger = logging.getLogger("nettools.plugin_config_editor.threads")
+logger = logging.getLogger("ss0t-scna.plugin_config_editor.threads")
 
 class LoadConfigListThread(QThread):
     """加载配置文件列表线程"""

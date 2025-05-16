@@ -13,7 +13,7 @@ from typing import Tuple, Dict, Any, List, Optional
 # POC信息
 name = "常见Web应用默认凭据检测"
 description = "检测常见Web应用是否使用默认凭据，包括常见路由器、CMS、管理面板等"
-author = "NetTools"
+author = "ss0t-scna"
 type = "凭据检测"
 severity = "high"  # 严重程度: critical, high, medium, low, info
 

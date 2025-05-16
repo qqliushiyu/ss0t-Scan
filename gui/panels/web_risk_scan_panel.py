@@ -31,7 +31,7 @@ from plugins import plugin_manager
 from core.scanner_manager import scanner_manager
 
 # 配置日志记录器
-logger = logging.getLogger("nettools.gui.web_risk_scan_panel")
+logger = logging.getLogger("ss0t-scna.gui.web_risk_scan_panel")
 
 class WebRiskScanPanel(BasePanel):
     """
@@ -49,7 +49,7 @@ class WebRiskScanPanel(BasePanel):
         self.config = {}
         
         # 初始化logger（先于父类初始化）
-        self.logger = logging.getLogger(f"nettools.gui.{self.MODULE_ID}")
+        self.logger = logging.getLogger(f"ss0t-scna.gui.{self.MODULE_ID}")
         self.logger.info("初始化Web风险扫描面板")
         
         # URL列表，用于存储从文件加载的URL

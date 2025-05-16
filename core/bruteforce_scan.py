@@ -623,7 +623,7 @@ class BruteforceScanner(BaseScanner):
             conn = SMBConnection(
                 username,
                 password,
-                "NetTools",  # 客户端名称
+                "ss0t-scna",  # 客户端名称
                 host,  # 服务器名称
                 use_ntlm_v2=True
             )

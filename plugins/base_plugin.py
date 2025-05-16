@@ -20,7 +20,7 @@ class WebRiskPlugin(abc.ABC):
     NAME = "基础插件"
     DESCRIPTION = "Web风险扫描插件基类"
     VERSION = "1.0.0"
-    AUTHOR = "NetTools"
+    AUTHOR = "ss0t-scna"
     CATEGORY = "安全"  # 可以是"漏洞检测", "信息收集", "安全配置", "指纹识别"等
     
     def __init__(self, config: Dict[str, Any] = None):

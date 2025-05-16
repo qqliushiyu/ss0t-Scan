@@ -12,7 +12,7 @@ from typing import Tuple, Dict, Any, Optional
 # POC信息
 name = "Apache HTTP Server 2.4.49 路径穿越漏洞"
 description = "Apache HTTP Server 2.4.49版本中存在路径穿越漏洞，攻击者可以利用此漏洞读取Web目录之外的文件或执行服务器上的代码。"
-author = "NetTools"
+author = "ss0t-scna"
 type = "路径穿越"
 severity = "critical"  # 严重程度: critical, high, medium, low, info
 

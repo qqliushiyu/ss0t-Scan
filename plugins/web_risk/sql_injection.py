@@ -19,7 +19,7 @@ class SQLInjectionScanner(WebRiskPlugin):
     NAME = "SQL注入检测"
     DESCRIPTION = "检测Web应用是否存在SQL注入漏洞"
     VERSION = "1.0.0"
-    AUTHOR = "NetTools"
+    AUTHOR = "ss0t-scna"
     CATEGORY = "漏洞检测"
     
     # SQL注入测试负载

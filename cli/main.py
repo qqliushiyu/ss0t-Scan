@@ -39,7 +39,7 @@ logging.basicConfig(
     ]
 )
 
-logger = logging.getLogger("nettools.cli")
+logger = logging.getLogger("ss0t-scna.cli")
 
 def create_parser() -> argparse.ArgumentParser:
     """

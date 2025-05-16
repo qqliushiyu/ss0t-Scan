@@ -16,7 +16,7 @@ from pathlib import Path
 from plugins.config_manager import plugin_config_manager
 
 # 配置日志
-logger = logging.getLogger("nettools.plugin_config_editor.model")
+logger = logging.getLogger("ss0t-scna.plugin_config_editor.model")
 
 class PluginConfigModel:
     """插件配置数据模型"""

@@ -1,8 +1,8 @@
-# NetTools 网络工具箱
+# ss0t-scna网络工具箱
 
 ## 📋 项目简介
 
-NetTools 是一个功能丰富的网络扫描与安全评估工具箱，基于Python实现，提供了图形界面(GUI)和命令行界面(CLI)两种使用方式。本工具箱集成了多种网络扫描、检测和分析功能，帮助网络管理员和安全专业人员快速了解网络状态和安全风险。
+ss0t-scna是一个功能丰富的网络扫描与安全评估工具箱，基于Python实现，提供了图形界面(GUI)和命令行界面(CLI)两种使用方式。本工具箱集成了多种网络扫描、检测和分析功能，帮助网络管理员和安全专业人员快速了解网络状态和安全风险。
 
 ## ✨ 核心功能
 
@@ -46,8 +46,8 @@ NetTools 是一个功能丰富的网络扫描与安全评估工具箱，基于Py
 1. 克隆或下载项目代码
 
 ```bash
-git clone https://github.com/yourusername/nettools.git
-cd nettools
+git clone https://github.com/yourusername/ss0t-scna.git
+cd ss0t-scna
 ```
 
 2. 创建并激活虚拟环境（推荐）
@@ -78,7 +78,7 @@ pip install -e .
 
 ```bash
 # 从安装后的包启动
-nettools-gui
+ss0t-scna-gui
 
 # 或直接运行脚本
 python gui/main.py
@@ -88,13 +88,13 @@ python gui/main.py
 
 ```bash
 # 从安装后的包启动
-nettools-cli --help
+ss0t-scna-cli --help
 
 # 或直接运行脚本
 python cli/main.py --help
 
 # 示例：执行主机扫描
-nettools-cli host-scan --target 192.168.1.0/24
+ss0t-scna-cli host-scan --target 192.168.1.0/24
 ```
 
 ### 基本界面操作
@@ -107,7 +107,7 @@ nettools-cli host-scan --target 192.168.1.0/24
 ## 📚 项目结构
 
 ```
-nettools/
+ss0t-scna/
 ├── cli/                 # 命令行接口
 ├── config/              # 配置文件目录
 ├── configs/             # 其他配置目录
@@ -131,7 +131,7 @@ nettools/
 
 ## 🛠️ 配置说明
 
-NetTools 使用 INI 格式的配置文件，主要配置文件位于 `config/settings.ini`。你可以通过以下方式修改配置：
+ss0t-scna使用 INI 格式的配置文件，主要配置文件位于 `config/settings.ini`。你可以通过以下方式修改配置：
 
 1. 直接编辑配置文件
 2. 通过GUI界面的"文件 > 编辑配置文件"菜单
@@ -146,7 +146,7 @@ NetTools 使用 INI 格式的配置文件，主要配置文件位于 `config/set
 
 ## 🔌 插件系统
 
-NetTools 支持通过插件扩展功能，特别是用于Web风险扫描。插件位于 `plugins/` 目录。
+ss0t-scna支持通过插件扩展功能，特别是用于Web风险扫描。插件位于 `plugins/` 目录。
 
 你可以：
 - 使用已有插件进行扫描

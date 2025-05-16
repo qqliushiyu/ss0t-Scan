@@ -19,7 +19,7 @@ class VulnScanner(WebRiskPlugin):
     NAME = "通用漏洞检测"
     DESCRIPTION = "检测Web应用是否存在目录遍历、文件包含、敏感文件等漏洞"
     VERSION = "1.0.0"
-    AUTHOR = "NetTools"
+    AUTHOR = "ss0t-scna"
     CATEGORY = "漏洞检测"
     
     # 默认漏洞检测路径

@@ -2,7 +2,7 @@
     "name": "WordPress配置文件泄露漏洞",
     "id": "wordpress-wp-config-disclosure",
     "description": "WordPress网站中可能存在配置文件泄露漏洞，攻击者可以通过特定URL访问wp-config.php文件的备份或临时文件，从而获取数据库凭据等敏感信息。",
-    "author": "NetTools",
+    "author": "ss0t-scna",
     "type": "信息泄露",
     "severity": "high",
     "references": [

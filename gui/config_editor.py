@@ -25,7 +25,7 @@ from PyQt5.QtGui import QFont, QColor, QSyntaxHighlighter, QTextCharFormat, QTex
 from utils.config import ConfigManager, config_manager
 
 # 配置日志
-logger = logging.getLogger("nettools.config_editor")
+logger = logging.getLogger("ss0t-scna.config_editor")
 
 class IniSyntaxHighlighter(QSyntaxHighlighter):
     """INI语法高亮器"""

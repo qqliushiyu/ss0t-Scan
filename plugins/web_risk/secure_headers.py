@@ -18,7 +18,7 @@ class SecureHeadersScanner(WebRiskPlugin):
     NAME = "安全响应头检测"
     DESCRIPTION = "检查Web服务器是否配置了安全相关的HTTP头"
     VERSION = "1.0.0"
-    AUTHOR = "NetTools"
+    AUTHOR = "ss0t-scna"
     CATEGORY = "安全配置"
     
     # 重要的安全响应头及其建议值

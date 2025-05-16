@@ -56,7 +56,7 @@ logging.basicConfig(
     ]
 )
 
-logger = logging.getLogger("nettools.gui")
+logger = logging.getLogger("ss0t-scna.gui")
 
 class PluginConfigLoaderThread(QThread):
     """插件配置加载线程"""

@@ -15,7 +15,7 @@ from typing import Tuple, Dict, Any, Optional
 # POC信息
 name = "Spring Framework远程代码执行漏洞 (Spring4Shell)"
 description = "Spring Framework 5.3.0 to 5.3.17版本中存在远程代码执行漏洞，攻击者可以在特定条件下利用此漏洞执行任意代码。"
-author = "NetTools"
+author = "ss0t-scna"
 type = "远程代码执行"
 severity = "critical"  # 严重程度: critical, high, medium, low, info
 

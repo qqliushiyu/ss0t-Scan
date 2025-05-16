@@ -38,7 +38,7 @@ from gui.plugin_config_editor.threads import (
 )
 
 # 配置日志
-logger = logging.getLogger("nettools.plugin_config_editor")
+logger = logging.getLogger("ss0t-scna.plugin_config_editor")
 
 class PluginConfigEditorDialog(QDialog):
     """插件配置编辑器对话框"""

@@ -16,7 +16,7 @@ from typing import Tuple, Dict, Any, List, Optional, Union
 # POC信息
 name = "SQL注入漏洞检测"
 description = "检测Web应用中的SQL注入漏洞，包括基于错误、基于时间延迟和基于布尔值的SQL注入"
-author = "NetTools"
+author = "ss0t-scna"
 type = "SQL注入"
 severity = "high"  # 严重程度: critical, high, medium, low, info
 

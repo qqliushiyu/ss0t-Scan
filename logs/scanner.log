@@ -1,1 +1,365 @@
 
+2025-05-16 19:54:42,532 - scanner.config - INFO - 配置已从 config/settings.ini 加载
+2025-05-16 19:54:44,121 - scanner.manager - INFO - Discovering scanners in core
+2025-05-16 19:54:44,122 - scanner.manager - INFO - Registered scanner: BruteforceScanner
+2025-05-16 19:54:44,185 - scanner.manager - INFO - Registered scanner: DnsChecker
+2025-05-16 19:54:44,186 - scanner.manager - INFO - Registered scanner: HostScanner
+2025-05-16 19:54:44,187 - scanner.manager - INFO - Registered scanner: PingMonitor
+2025-05-16 19:54:44,187 - scanner.manager - INFO - Registered scanner: POCScanner
+2025-05-16 19:54:44,188 - scanner.manager - INFO - Registered scanner: PortScanner
+2025-05-16 19:54:44,189 - scanner.manager - INFO - Registered scanner: TcpPing
+2025-05-16 19:54:44,189 - scanner.manager - INFO - Registered scanner: Traceroute
+2025-05-16 19:54:44,189 - scanner.manager - INFO - Registered scanner: WebDirScanner
+2025-05-16 19:54:44,190 - scanner.manager - INFO - Registered scanner: WebRiskScanner
+2025-05-16 19:54:44,190 - scanner.manager - INFO - Discovering scanners in plugins
+2025-05-16 19:54:44,193 - scanner.manager - INFO - Total 10 scanners registered
+2025-05-16 19:54:44,375 - ss0t-scna.gui.webriskscanner - INFO - 初始化Web风险扫描面板
+2025-05-16 19:54:44,382 - scanner.config - INFO - 配置已从 config/settings.ini 加载
+2025-05-16 19:54:44,383 - ss0t-scna.gui.webriskscanner - INFO - 已从配置加载 0 个禁用插件
+2025-05-16 19:54:44,383 - ss0t-scna.gui.webriskscanner - INFO - 已从配置加载插件配置，包含 0 个插件的配置
+2025-05-16 19:54:44,383 - ss0t-scna.gui.webriskscanner - INFO - 已加载Web风险扫描配置
+2025-05-16 19:54:44,383 - ss0t-scna.gui.webriskscanner - WARNING - 注册信号类型失败: cannot import name 'qRegisterMetaType' from 'PyQt5.QtCore' (C:\Program Files\Python39\lib\site-packages\PyQt5\QtCore.pyd)
+2025-05-16 19:54:44,384 - plugins.manager - INFO - 从 plugins/web_risk 中发现插件
+2025-05-16 19:54:44,410 - plugins.manager - INFO - 注册插件: FingerprintScanner (Web指纹识别 v1.0.0)
+2025-05-16 19:54:44,418 - plugins.manager - INFO - 注册插件: POCScanner (POC漏洞扫描 v1.0.0)
+2025-05-16 19:54:44,419 - plugins.manager - INFO - 注册插件: SecureHeadersScanner (安全响应头检测 v1.0.0)
+2025-05-16 19:54:44,419 - plugins.manager - INFO - 注册插件: SQLInjectionScanner (SQL注入检测 v1.0.0)
+2025-05-16 19:54:44,420 - plugins.manager - INFO - 注册插件: VulnScanner (通用漏洞检测 v1.0.0)
+2025-05-16 19:54:44,420 - plugins.manager - INFO - 注册插件: WAFDetector (WAF检测 v1.0.0)
+2025-05-16 19:54:44,420 - plugins.manager - INFO - 注册插件: XSSScanner (XSS漏洞检测 v1.0.0)
+2025-05-16 19:54:44,421 - plugins.manager - INFO - 共注册 7 个插件
+2025-05-16 19:54:44,421 - plugins.config_manager - INFO - 从 C:\Users\Administrator\Desktop\kw\nettools\configs\plugins\fingerprintscanner.json 加载了插件配置
+2025-05-16 19:54:44,421 - plugins.web_risk.FingerprintScanner - INFO - 从配置加载了 11 条自定义指纹
+2025-05-16 19:54:44,422 - plugins.web_risk.FingerprintScanner - INFO - 从文件 configs/fingerprints.txt 加载了 26 条指纹
+2025-05-16 19:54:44,422 - plugins.web_risk.FingerprintScanner - INFO - 已加载 65 条Web指纹
+2025-05-16 19:54:44,424 - plugins.config_manager - INFO - 从 C:\Users\Administrator\Desktop\kw\nettools\configs\plugins\pocscanner.json 加载了插件配置
+2025-05-16 19:54:44,441 - plugins.web_risk.POCScanner - INFO - 共加载 6 个POC
+2025-05-16 19:54:44,441 - plugins.config_manager - INFO - 从 C:\Users\Administrator\Desktop\kw\nettools\configs\plugins\secureheadersscanner.json 加载了插件配置
+2025-05-16 19:54:44,443 - plugins.config_manager - INFO - 从 C:\Users\Administrator\Desktop\kw\nettools\configs\plugins\sqlinjectionscanner.json 加载了插件配置
+2025-05-16 19:54:44,445 - plugins.config_manager - INFO - 从 C:\Users\Administrator\Desktop\kw\nettools\configs\plugins\vulnscanner.json 加载了插件配置
+2025-05-16 19:54:44,445 - plugins.config_manager - INFO - 从 C:\Users\Administrator\Desktop\kw\nettools\configs\plugins\wafdetector.json 加载了插件配置
+2025-05-16 19:54:44,446 - plugins.config_manager - INFO - 从 C:\Users\Administrator\Desktop\kw\nettools\configs\plugins\xssscanner.json 加载了插件配置
+2025-05-16 19:54:44,565 - plugins.config_manager - INFO - 从 C:\Users\Administrator\Desktop\kw\nettools\configs\plugins\finger.json 加载了插件配置
+2025-05-16 19:54:44,565 - plugins.config_manager - INFO - 从 C:\Users\Administrator\Desktop\kw\nettools\configs\plugins\myplugin.json 加载了插件配置
+2025-05-16 19:54:44,566 - plugins.manager - INFO - 成功初始化 7 个插件
+2025-05-16 19:54:44,571 - ss0t-scna.gui.webriskscanner - INFO - 发现 7 个Web风险扫描插件
+2025-05-16 19:54:44,573 - scanner.config - INFO - 配置已从 config/settings.ini 加载
+2025-05-16 19:54:44,574 - ss0t-scna.gui.webriskscanner - INFO - 已从配置加载 0 个禁用插件
+2025-05-16 19:54:44,574 - ss0t-scna.gui.webriskscanner - INFO - 已从配置加载插件配置，包含 0 个插件的配置
+2025-05-16 19:54:44,574 - ss0t-scna.gui.webriskscanner - INFO - 已加载Web风险扫描配置
+2025-05-16 19:54:44,584 - plugins.manager - INFO - 从 plugins/web_risk 中发现插件
+2025-05-16 19:54:44,585 - plugins.manager - INFO - 注册插件: FingerprintScanner (Web指纹识别 v1.0.0)
+2025-05-16 19:54:44,585 - plugins.manager - INFO - 注册插件: POCScanner (POC漏洞扫描 v1.0.0)
+2025-05-16 19:54:44,587 - plugins.manager - INFO - 注册插件: SecureHeadersScanner (安全响应头检测 v1.0.0)
+2025-05-16 19:54:44,587 - plugins.manager - INFO - 注册插件: SQLInjectionScanner (SQL注入检测 v1.0.0)
+2025-05-16 19:54:44,588 - plugins.manager - INFO - 注册插件: VulnScanner (通用漏洞检测 v1.0.0)
+2025-05-16 19:54:44,588 - plugins.manager - INFO - 注册插件: WAFDetector (WAF检测 v1.0.0)
+2025-05-16 19:54:44,588 - plugins.manager - INFO - 注册插件: XSSScanner (XSS漏洞检测 v1.0.0)
+2025-05-16 19:54:44,588 - plugins.manager - INFO - 共注册 7 个插件
+2025-05-16 19:54:44,588 - plugins.web_risk.FingerprintScanner - INFO - 从配置加载了 11 条自定义指纹
+2025-05-16 19:54:44,589 - plugins.web_risk.FingerprintScanner - INFO - 从文件 configs/fingerprints.txt 加载了 26 条指纹
+2025-05-16 19:54:44,589 - plugins.web_risk.FingerprintScanner - INFO - 已加载 67 条Web指纹
+2025-05-16 19:54:44,591 - plugins.web_risk.POCScanner - INFO - 共加载 6 个POC
+2025-05-16 19:54:44,594 - gui.panels.poc_scan - INFO - 已加载 6 个POC
+2025-05-16 19:54:44,600 - ss0t-scna.gui - INFO - 已加载 10 个模块
+2025-05-16 19:54:54,090 - ss0t-scna.gui.hostscanner - INFO - 开始 主机扫描 扫描
+2025-05-16 19:54:54,091 - scanner.HostScanner - INFO - Starting HostScanner scan with task_id: 251db2a2-ee6a-4611-bfb8-7347a7fb4f98
+2025-05-16 19:54:54,093 - scanner.HostScanner - INFO - 开始扫描 254 个目标 IP
+2025-05-16 19:54:56,546 - scanner.HostScanner - INFO - 扫描完成，发现 3/254 个在线主机
+2025-05-16 19:54:56,548 - scanner.HostScanner - INFO - Scan completed: HostScanner, records: 3, duration: 2.46s
+2025-05-16 19:54:56,554 - ss0t-scna.gui.hostscanner - INFO - 扫描完成，记录数: 3
+2025-05-16 19:55:32,997 - ss0t-scna.gui.portscanner - INFO - 开始 端口扫描 扫描
+2025-05-16 19:55:32,998 - scanner.PortScanner - INFO - Starting PortScanner scan with task_id: ba9bf3c9-9531-46f3-ac0e-5d3abf31085f
+2025-05-16 19:55:32,998 - scanner.PortScanner - INFO - 开始扫描 1 个目标的 25 个端口，共 25 个连接
+2025-05-16 19:55:34,090 - scanner.PortScanner - INFO - 扫描完成，发现 1 个主机的 6 个开放端口
+2025-05-16 19:55:34,091 - scanner.PortScanner - INFO - Scan completed: PortScanner, records: 6, duration: 1.09s
+2025-05-16 19:55:34,702 - ss0t-scna.gui.portscanner - INFO - 扫描完成，记录数: 6
+2025-05-16 19:56:19,564 - ss0t-scna.gui.dnschecker - INFO - 开始 DNS检测 扫描
+2025-05-16 19:56:19,565 - scanner.DnsChecker - INFO - Starting DnsChecker scan with task_id: 407e4038-5813-484c-889f-fdd492b64cef
+2025-05-16 19:56:19,565 - scanner.DnsChecker - INFO - 开始 DNS 检测，目标: baidu.com，记录类型: A,AAAA,CNAME,MX,NS,TXT,SOA,PTR,SRV
+2025-05-16 19:56:29,660 - scanner.DnsChecker - INFO - DNS 检测完成，共获取到 0 条记录
+2025-05-16 19:56:29,661 - scanner.DnsChecker - INFO - Scan completed: DnsChecker, records: 0, duration: 10.10s
+2025-05-16 19:56:29,664 - ss0t-scna.gui.dnschecker - INFO - 扫描完成，记录数: 0
+2025-05-16 19:56:37,349 - ss0t-scna.gui.dnschecker - INFO - 开始 DNS检测 扫描
+2025-05-16 19:56:37,349 - scanner.DnsChecker - INFO - Starting DnsChecker scan with task_id: dba7e5ee-f2bf-41a4-b711-800d3f4ac05f
+2025-05-16 19:56:37,350 - scanner.DnsChecker - INFO - 开始 DNS 检测，目标: baidu.com，记录类型: A,AAAA,CNAME,MX,NS,TXT,SOA,PTR,SRV
+2025-05-16 19:56:38,414 - scanner.DnsChecker - INFO - DNS 检测完成，共获取到 14 条记录
+2025-05-16 19:56:38,414 - scanner.DnsChecker - INFO - Scan completed: DnsChecker, records: 14, duration: 1.06s
+2025-05-16 19:56:38,426 - ss0t-scna.gui.dnschecker - INFO - 扫描完成，记录数: 14
+2025-05-16 19:57:13,164 - ss0t-scna.gui.traceroute - INFO - 开始 路由追踪 扫描
+2025-05-16 19:57:13,165 - scanner.Traceroute - INFO - Starting Traceroute scan with task_id: 70211d2b-0e16-4110-9e39-277aaf25791e
+2025-05-16 19:57:13,181 - scanner.Traceroute - INFO - 开始对 baidu.com 进行路由追踪
+2025-05-16 19:57:33,488 - scanner.Traceroute - INFO - Stopping scan: Traceroute
+2025-05-16 19:57:33,490 - ss0t-scna.gui.traceroute - INFO - 正在停止扫描...
+2025-05-16 19:57:34,139 - scanner.Traceroute - INFO - 追踪未能到达目标 baidu.com(110.242.68.66)
+2025-05-16 19:57:34,140 - scanner.Traceroute - INFO - 路由追踪完成，共 2 跳
+2025-05-16 19:57:34,140 - scanner.Traceroute - INFO - Scan completed: Traceroute, records: 2, duration: 20.96s
+2025-05-16 19:57:34,147 - ss0t-scna.gui.traceroute - INFO - 扫描完成，记录数: 2
+2025-05-16 19:57:34,250 - ss0t-scna.gui.traceroute - INFO - 扫描已停止
+2025-05-16 19:57:36,199 - ss0t-scna.gui.traceroute - INFO - 开始 路由追踪 扫描
+2025-05-16 19:57:36,199 - scanner.Traceroute - INFO - Starting Traceroute scan with task_id: d6bafbc8-e4b8-464c-9e92-95ee6ba2cc04
+2025-05-16 19:57:36,202 - scanner.Traceroute - INFO - 开始对 baidu.com 进行路由追踪
+2025-05-16 19:58:22,095 - ss0t-scna.gui.pingmonitor - INFO - 开始 Ping监控
+2025-05-16 19:58:22,096 - scanner.PingMonitor - INFO - Starting PingMonitor scan with task_id: 78929d18-91e7-4891-99ea-a8a73ba0d4d9
+2025-05-16 19:58:22,097 - scanner.PingMonitor - INFO - 开始 Ping 监控，目标: 2 个主机，间隔: 5.0秒
+2025-05-16 19:58:22,097 - scanner.PingMonitor - INFO - Scan completed: PingMonitor, records: 1, duration: 0.00s
+2025-05-16 19:58:23,042 - scanner.PingMonitor - INFO - 监控批次 1: 1/2 在线, 0/1 缓慢
+2025-05-16 19:58:28,044 - scanner.PingMonitor - INFO - 监控批次 2: 1/2 在线, 0/1 缓慢
+2025-05-16 19:58:33,033 - scanner.PingMonitor - INFO - 监控批次 3: 1/2 在线, 0/1 缓慢
+2025-05-16 19:58:38,043 - scanner.PingMonitor - INFO - 监控批次 4: 1/2 在线, 0/1 缓慢
+2025-05-16 19:58:43,035 - scanner.PingMonitor - INFO - 监控批次 5: 1/2 在线, 0/1 缓慢
+2025-05-16 19:58:48,044 - scanner.PingMonitor - INFO - 监控批次 6: 1/2 在线, 0/1 缓慢
+2025-05-16 19:58:53,032 - scanner.PingMonitor - INFO - 监控批次 7: 1/2 在线, 0/1 缓慢
+2025-05-16 19:58:58,040 - scanner.PingMonitor - INFO - 监控批次 8: 1/2 在线, 0/1 缓慢
+2025-05-16 19:58:59,494 - ss0t-scna.gui.tcpping - INFO - 开始扫描，持续模式: True
+2025-05-16 19:58:59,494 - ss0t-scna.gui.tcpping - INFO - 持续模式: 确保停止按钮已启用
+2025-05-16 19:58:59,495 - scanner.TcpPing - INFO - 开始持续 TCP Ping 扫描，目标: 1 个主机，端口: 2 个
+2025-05-16 19:58:59,498 - scanner.TcpPing - INFO - 扫描目标 1/1: 192.168.31.1
+2025-05-16 19:58:59,499 - ss0t-scna.gui.tcpping - INFO - 扫描线程已启动，停止按钮状态: True
+2025-05-16 19:58:59,516 - ss0t-scna.gui.tcpping - INFO - 开始 TCP Ping 扫描，停止按钮状态: True
+2025-05-16 19:58:59,616 - ss0t-scna.gui.tcpping - INFO - 扫描完成，记录数: 2
+2025-05-16 19:58:59,616 - ss0t-scna.gui.tcpping - INFO - 扫描完成回调，持续模式: True, 当前扫描状态: True
+2025-05-16 19:58:59,626 - ss0t-scna.gui.tcpping - INFO - 持续模式扫描完成后，按钮状态: 扫描=False, 停止=True
+2025-05-16 19:59:03,032 - scanner.PingMonitor - INFO - 监控批次 9: 1/2 在线, 0/1 缓慢
+2025-05-16 19:59:08,049 - scanner.PingMonitor - INFO - 监控批次 10: 1/2 在线, 0/1 缓慢
+2025-05-16 19:59:13,041 - scanner.PingMonitor - INFO - 监控批次 11: 1/2 在线, 0/1 缓慢
+2025-05-16 19:59:18,048 - scanner.PingMonitor - INFO - 监控批次 12: 1/2 在线, 0/1 缓慢
+2025-05-16 19:59:23,039 - scanner.PingMonitor - INFO - 监控批次 13: 1/2 在线, 0/1 缓慢
+2025-05-16 19:59:28,045 - scanner.PingMonitor - INFO - 监控批次 14: 1/2 在线, 0/1 缓慢
+2025-05-16 19:59:33,040 - scanner.PingMonitor - INFO - 监控批次 15: 1/2 在线, 0/1 缓慢
+2025-05-16 19:59:38,038 - scanner.PingMonitor - INFO - 监控批次 16: 1/2 在线, 0/1 缓慢
+2025-05-16 19:59:40,166 - ss0t-scna.gui.webriskscanner - INFO - 扫描配置: 目标=192.168.31.1/24, 端口=80,443, 线程数=50, 扫描深度=1
+2025-05-16 19:59:40,170 - scanner.config - INFO - 配置已从 config/settings.ini 加载
+2025-05-16 19:59:40,170 - scanner.config - INFO - 配置已从 config/settings.ini 加载
+2025-05-16 19:59:40,173 - scanner.config - INFO - 配置已从 config/settings.ini 加载
+2025-05-16 19:59:40,174 - plugins.manager - INFO - 成功初始化 7 个插件
+2025-05-16 19:59:40,175 - scanner.WebRiskScanner - INFO - 发现 7 个Web风险扫描插件
+2025-05-16 19:59:40,175 - scanner.WebRiskScanner - INFO -   - Web指纹识别 v1.0.0 (指纹识别)
+2025-05-16 19:59:40,175 - scanner.WebRiskScanner - INFO -   - POC漏洞扫描 v1.0.0 (漏洞检测)
+2025-05-16 19:59:40,175 - scanner.WebRiskScanner - INFO -   - 安全响应头检测 v1.0.0 (安全配置)
+2025-05-16 19:59:40,175 - scanner.WebRiskScanner - INFO -   - SQL注入检测 v1.0.0 (漏洞检测)
+2025-05-16 19:59:40,175 - scanner.WebRiskScanner - INFO -   - 通用漏洞检测 v1.0.0 (漏洞检测)
+2025-05-16 19:59:40,176 - scanner.WebRiskScanner - INFO -   - WAF检测 v1.0.0 (信息收集)
+2025-05-16 19:59:40,176 - scanner.WebRiskScanner - INFO -   - XSS漏洞检测 v1.0.0 (漏洞检测)
+2025-05-16 19:59:40,177 - scanner.WebRiskScanner - INFO - Starting WebRiskScanner scan with task_id: 430eae65-4016-4fb1-8fb1-45d5dc609be0
+2025-05-16 19:59:40,178 - scanner.WebRiskScanner - INFO - 共准备 508 个URL进行扫描
+2025-05-16 19:59:40,179 - scanner.WebRiskScanner - INFO - 开始Web风险扫描: {'targets': 508, 'threads': 50, 'scan_depth': 1, 'verify_ssl': False, 'timeout': 10}
+2025-05-16 19:59:40,179 - scanner.WebRiskScanner - INFO - 开始对 508 个目标进行存活性检测...
+2025-05-16 19:59:40,418 - scanner.Traceroute - INFO - 追踪未能到达目标 baidu.com(110.242.68.66)
+2025-05-16 19:59:40,418 - scanner.Traceroute - INFO - 路由追踪完成，共 22 跳
+2025-05-16 19:59:40,434 - scanner.Traceroute - INFO - Scan completed: Traceroute, records: 22, duration: 124.23s
+2025-05-16 19:59:40,444 - ss0t-scna.gui.traceroute - INFO - 扫描完成，记录数: 22
+2025-05-16 19:59:43,036 - scanner.PingMonitor - INFO - 监控批次 17: 1/2 在线, 0/1 缓慢
+2025-05-16 19:59:47,658 - scanner.WebRiskScanner - INFO - 正在停止Web风险扫描...
+2025-05-16 19:59:47,659 - scanner.WebRiskScanner - INFO - 扫描已停止，取消了 0 个未完成任务，用时 0.00 秒
+2025-05-16 19:59:47,660 - scanner.WebRiskScanner - INFO - Stopping scan: WebRiskScanner
+2025-05-16 19:59:47,660 - ss0t-scna.gui.webriskscanner - INFO - 正在停止扫描...
+2025-05-16 19:59:48,043 - scanner.PingMonitor - INFO - 监控批次 18: 1/2 在线, 0/1 缓慢
+2025-05-16 19:59:50,623 - scanner.WebRiskScanner - INFO - Scan completed: WebRiskScanner, records: 2, duration: 10.45s
+2025-05-16 19:59:50,689 - ss0t-scna.gui.webriskscanner - INFO - 扫描已停止
+2025-05-16 19:59:53,046 - scanner.PingMonitor - INFO - 监控批次 19: 1/2 在线, 0/1 缓慢
+2025-05-16 19:59:57,929 - ss0t-scna.gui.webriskscanner - INFO - 扫描配置: 目标=192.168.31.1/24, 端口=80,443, 线程数=200, 扫描深度=1
+2025-05-16 19:59:57,932 - scanner.config - INFO - 配置已从 config/settings.ini 加载
+2025-05-16 19:59:57,934 - scanner.config - INFO - 配置已从 config/settings.ini 加载
+2025-05-16 19:59:57,938 - scanner.config - INFO - 配置已从 config/settings.ini 加载
+2025-05-16 19:59:57,939 - plugins.manager - INFO - 成功初始化 7 个插件
+2025-05-16 19:59:57,939 - scanner.WebRiskScanner - INFO - 发现 7 个Web风险扫描插件
+2025-05-16 19:59:57,940 - scanner.WebRiskScanner - INFO -   - Web指纹识别 v1.0.0 (指纹识别)
+2025-05-16 19:59:57,940 - scanner.WebRiskScanner - INFO -   - POC漏洞扫描 v1.0.0 (漏洞检测)
+2025-05-16 19:59:57,940 - scanner.WebRiskScanner - INFO -   - 安全响应头检测 v1.0.0 (安全配置)
+2025-05-16 19:59:57,940 - scanner.WebRiskScanner - INFO -   - SQL注入检测 v1.0.0 (漏洞检测)
+2025-05-16 19:59:57,940 - scanner.WebRiskScanner - INFO -   - 通用漏洞检测 v1.0.0 (漏洞检测)
+2025-05-16 19:59:57,940 - scanner.WebRiskScanner - INFO -   - WAF检测 v1.0.0 (信息收集)
+2025-05-16 19:59:57,941 - scanner.WebRiskScanner - INFO -   - XSS漏洞检测 v1.0.0 (漏洞检测)
+2025-05-16 19:59:57,944 - scanner.WebRiskScanner - INFO - Starting WebRiskScanner scan with task_id: e0cf20ba-0d57-4589-81d0-a3d120265811
+2025-05-16 19:59:57,946 - scanner.WebRiskScanner - INFO - 共准备 508 个URL进行扫描
+2025-05-16 19:59:57,947 - scanner.WebRiskScanner - INFO - 开始Web风险扫描: {'targets': 508, 'threads': 200, 'scan_depth': 1, 'verify_ssl': False, 'timeout': 3}
+2025-05-16 19:59:57,947 - scanner.WebRiskScanner - INFO - 开始对 508 个目标进行存活性检测...
+2025-05-16 19:59:58,125 - scanner.PingMonitor - INFO - 监控批次 20: 1/2 在线, 0/1 缓慢
+2025-05-16 20:00:03,036 - scanner.PingMonitor - INFO - 监控批次 21: 1/2 在线, 0/1 缓慢
+2025-05-16 20:00:08,045 - scanner.PingMonitor - INFO - 监控批次 22: 1/2 在线, 0/1 缓慢
+2025-05-16 20:00:13,045 - scanner.PingMonitor - INFO - 监控批次 23: 1/2 在线, 0/1 缓慢
+2025-05-16 20:00:16,428 - scanner.WebRiskScanner - INFO - 检测到 3/508 个目标存活 (0.6%)
+2025-05-16 20:00:16,429 - scanner.WebRiskScanner - INFO - 状态码统计:
+2025-05-16 20:00:16,430 - scanner.WebRiskScanner - INFO -   - 状态码 0 (连接失败): 505 个URL
+2025-05-16 20:00:16,430 - scanner.WebRiskScanner - INFO -   - 状态码 200 (成功响应): 2 个URL
+2025-05-16 20:00:16,430 - scanner.WebRiskScanner - INFO -   - 状态码 403 (客户端错误): 1 个URL
+2025-05-16 20:00:16,430 - scanner.WebRiskScanner - INFO - 开始对 3 个存活目标进行详细安全扫描...
+2025-05-16 20:00:16,453 - scanner.WebRiskScanner - INFO - 使用插件 Web指纹识别 扫描 http://192.168.31.177:80
+2025-05-16 20:00:16,454 - scanner.WebRiskScanner - INFO - 使用插件 Web指纹识别 扫描 http://192.168.31.1:80
+2025-05-16 20:00:16,460 - scanner.WebRiskScanner - INFO - 插件 Web指纹识别 检测到 basic_info: http://192.168.31.177:80
+2025-05-16 20:00:16,461 - scanner.WebRiskScanner - INFO - 插件 Web指纹识别 检测到 server_info: http://192.168.31.177:80
+2025-05-16 20:00:16,462 - scanner.WebRiskScanner - INFO - 使用插件 POC漏洞扫描 扫描 http://192.168.31.177:80
+2025-05-16 20:00:16,462 - plugins.web_risk.POCScanner - INFO - 开始对 http://192.168.31.177:80/ 运行 6 个POC
+2025-05-16 20:00:16,585 - scanner.WebRiskScanner - INFO - 插件 Web指纹识别 检测到 basic_info: http://192.168.31.1:80
+2025-05-16 20:00:16,588 - scanner.WebRiskScanner - INFO - 插件 Web指纹识别 检测到 server_info: http://192.168.31.1:80
+2025-05-16 20:00:16,589 - scanner.WebRiskScanner - INFO - 使用插件 POC漏洞扫描 扫描 http://192.168.31.1:80
+2025-05-16 20:00:16,590 - plugins.web_risk.POCScanner - INFO - 开始对 http://192.168.31.1:80/ 运行 6 个POC
+2025-05-16 20:00:16,624 - scanner.WebRiskScanner - INFO - 使用插件 Web指纹识别 扫描 https://192.168.31.1:443
+2025-05-16 20:00:16,796 - scanner.WebRiskScanner - INFO - 插件 Web指纹识别 检测到 basic_info: https://192.168.31.1:443
+2025-05-16 20:00:16,799 - scanner.WebRiskScanner - INFO - 插件 Web指纹识别 检测到 server_info: https://192.168.31.1:443
+2025-05-16 20:00:16,800 - scanner.WebRiskScanner - INFO - 使用插件 POC漏洞扫描 扫描 https://192.168.31.1:443
+2025-05-16 20:00:16,801 - plugins.web_risk.POCScanner - INFO - 开始对 https://192.168.31.1:443/ 运行 6 个POC
+2025-05-16 20:00:18,037 - scanner.PingMonitor - INFO - 监控批次 24: 1/2 在线, 0/1 缓慢
+2025-05-16 20:00:23,038 - scanner.PingMonitor - INFO - 监控批次 25: 1/2 在线, 0/1 缓慢
+2025-05-16 20:00:28,042 - scanner.PingMonitor - INFO - 监控批次 26: 1/2 在线, 0/1 缓慢
+2025-05-16 20:00:33,037 - scanner.PingMonitor - INFO - 监控批次 27: 1/2 在线, 0/1 缓慢
+2025-05-16 20:00:33,438 - scanner.WebRiskScanner - INFO - 插件 POC漏洞扫描 检测到 vulnerability: http://192.168.31.177:80
+2025-05-16 20:00:33,439 - scanner.WebRiskScanner - INFO - 使用插件 安全响应头检测 扫描 http://192.168.31.177:80
+2025-05-16 20:00:33,444 - scanner.WebRiskScanner - INFO - 插件 安全响应头检测 检测到 security_header: http://192.168.31.177:80
+2025-05-16 20:00:33,445 - scanner.WebRiskScanner - INFO - 插件 安全响应头检测 检测到 security_header: http://192.168.31.177:80
+2025-05-16 20:00:33,445 - scanner.WebRiskScanner - INFO - 插件 安全响应头检测 检测到 security_header: http://192.168.31.177:80
+2025-05-16 20:00:33,445 - scanner.WebRiskScanner - INFO - 插件 安全响应头检测 检测到 security_header: http://192.168.31.177:80
+2025-05-16 20:00:33,446 - scanner.WebRiskScanner - INFO - 插件 安全响应头检测 检测到 security_header: http://192.168.31.177:80
+2025-05-16 20:00:33,446 - scanner.WebRiskScanner - INFO - 插件 安全响应头检测 检测到 security_header: http://192.168.31.177:80
+2025-05-16 20:00:33,446 - scanner.WebRiskScanner - INFO - 插件 安全响应头检测 检测到 security_header: http://192.168.31.177:80
+2025-05-16 20:00:33,446 - scanner.WebRiskScanner - INFO - 插件 安全响应头检测 检测到 security_header: http://192.168.31.177:80
+2025-05-16 20:00:33,447 - scanner.WebRiskScanner - INFO - 插件 安全响应头检测 检测到 security_header: http://192.168.31.177:80
+2025-05-16 20:00:33,447 - scanner.WebRiskScanner - INFO - 使用插件 SQL注入检测 扫描 http://192.168.31.177:80
+2025-05-16 20:00:33,923 - scanner.WebRiskScanner - INFO - 插件 SQL注入检测 检测到 vulnerability: http://192.168.31.177:80
+2025-05-16 20:00:33,925 - scanner.WebRiskScanner - INFO - 使用插件 通用漏洞检测 扫描 http://192.168.31.177:80
+2025-05-16 20:00:33,946 - scanner.WebRiskScanner - INFO - 插件 通用漏洞检测 检测到 vulnerability: http://192.168.31.177:80
+2025-05-16 20:00:33,947 - scanner.WebRiskScanner - INFO - 使用插件 WAF检测 扫描 http://192.168.31.177:80
+2025-05-16 20:00:33,977 - scanner.WebRiskScanner - INFO - 插件 WAF检测 检测到 waf: http://192.168.31.177:80
+2025-05-16 20:00:33,977 - scanner.WebRiskScanner - INFO - 使用插件 XSS漏洞检测 扫描 http://192.168.31.177:80
+2025-05-16 20:00:34,396 - scanner.WebRiskScanner - INFO - 插件 XSS漏洞检测 发现风险: 未知 - http://192.168.31.177:80
+2025-05-16 20:00:34,396 - scanner.WebRiskScanner - INFO - URL http://192.168.31.177:80 的服务器信息: Microsoft-IIS/10.0, 技术: IIS, ASP.NET
+2025-05-16 20:00:38,041 - scanner.PingMonitor - INFO - 监控批次 28: 1/2 在线, 0/1 缓慢
+2025-05-16 20:00:43,043 - scanner.PingMonitor - INFO - 监控批次 29: 1/2 在线, 0/1 缓慢
+2025-05-16 20:00:45,111 - scanner.WebRiskScanner - INFO - 插件 POC漏洞扫描 检测到 vulnerability: http://192.168.31.1:80
+2025-05-16 20:00:45,113 - scanner.WebRiskScanner - INFO - 使用插件 安全响应头检测 扫描 http://192.168.31.1:80
+2025-05-16 20:00:45,121 - scanner.WebRiskScanner - INFO - 插件 安全响应头检测 检测到 security_header: http://192.168.31.1:80
+2025-05-16 20:00:45,121 - scanner.WebRiskScanner - INFO - 插件 安全响应头检测 检测到 security_header: http://192.168.31.1:80
+2025-05-16 20:00:45,123 - scanner.WebRiskScanner - INFO - 插件 安全响应头检测 检测到 security_header: http://192.168.31.1:80
+2025-05-16 20:00:45,123 - scanner.WebRiskScanner - INFO - 插件 安全响应头检测 检测到 security_header: http://192.168.31.1:80
+2025-05-16 20:00:45,123 - scanner.WebRiskScanner - INFO - 插件 安全响应头检测 检测到 security_header: http://192.168.31.1:80
+2025-05-16 20:00:45,124 - scanner.WebRiskScanner - INFO - 插件 安全响应头检测 检测到 security_header: http://192.168.31.1:80
+2025-05-16 20:00:45,124 - scanner.WebRiskScanner - INFO - 插件 安全响应头检测 检测到 security_header: http://192.168.31.1:80
+2025-05-16 20:00:45,124 - scanner.WebRiskScanner - INFO - 插件 安全响应头检测 检测到 security_header: http://192.168.31.1:80
+2025-05-16 20:00:45,125 - scanner.WebRiskScanner - INFO - 插件 安全响应头检测 检测到 security_header: http://192.168.31.1:80
+2025-05-16 20:00:45,125 - scanner.WebRiskScanner - INFO - 使用插件 SQL注入检测 扫描 http://192.168.31.1:80
+2025-05-16 20:00:48,036 - scanner.PingMonitor - INFO - 监控批次 30: 1/2 在线, 0/1 缓慢
+2025-05-16 20:00:52,108 - scanner.WebRiskScanner - INFO - 插件 SQL注入检测 检测到 vulnerability: http://192.168.31.1:80
+2025-05-16 20:00:52,111 - scanner.WebRiskScanner - INFO - 使用插件 通用漏洞检测 扫描 http://192.168.31.1:80
+2025-05-16 20:00:52,317 - scanner.WebRiskScanner - INFO - 插件 通用漏洞检测 检测到 vulnerability: http://192.168.31.1:80
+2025-05-16 20:00:52,318 - scanner.WebRiskScanner - INFO - 使用插件 WAF检测 扫描 http://192.168.31.1:80
+2025-05-16 20:00:52,651 - scanner.WebRiskScanner - INFO - 插件 WAF检测 检测到 waf: http://192.168.31.1:80
+2025-05-16 20:00:52,652 - scanner.WebRiskScanner - INFO - 使用插件 XSS漏洞检测 扫描 http://192.168.31.1:80
+2025-05-16 20:00:53,031 - scanner.PingMonitor - INFO - 监控批次 31: 1/2 在线, 0/1 缓慢
+2025-05-16 20:00:58,042 - scanner.PingMonitor - INFO - 监控批次 32: 1/2 在线, 0/1 缓慢
+2025-05-16 20:00:59,443 - scanner.WebRiskScanner - INFO - 插件 XSS漏洞检测 发现风险: 未知 - http://192.168.31.1:80
+2025-05-16 20:00:59,444 - scanner.WebRiskScanner - INFO - URL http://192.168.31.1:80 的服务器信息: nginx/1.12.2, 技术: Nginx, ASP.NET
+2025-05-16 20:01:02,071 - ss0t-scna.gui.tcpping - INFO - 用户点击了停止按钮
+2025-05-16 20:01:02,073 - scanner.TcpPing - INFO - TCP Ping 扫描正在停止
+2025-05-16 20:01:02,073 - scanner.TcpPing - INFO - TCP Ping 扫描已停止
+2025-05-16 20:01:02,073 - ss0t-scna.gui.tcpping - INFO - 停止扫描: 持续模式=True, 扫描状态=False, 停止标志=True
+2025-05-16 20:01:02,075 - ss0t-scna.gui.tcpping - INFO - 正在停止 TCP Ping 扫描...
+2025-05-16 20:01:02,179 - ss0t-scna.gui.tcpping - INFO - 扫描线程已停止，恢复UI状态
+2025-05-16 20:01:02,179 - ss0t-scna.gui.tcpping - INFO - UI恢复后按钮状态: 扫描=True, 停止=False
+2025-05-16 20:01:02,182 - ss0t-scna.gui.tcpping - INFO - 扫描线程已停止，恢复UI状态
+2025-05-16 20:01:03,037 - scanner.PingMonitor - INFO - 监控批次 33: 1/2 在线, 0/1 缓慢
+2025-05-16 20:01:03,590 - ss0t-scna.gui.tcpping - INFO - TCP Ping 扫描完成
+2025-05-16 20:01:08,038 - scanner.PingMonitor - INFO - 监控批次 34: 1/2 在线, 0/1 缓慢
+2025-05-16 20:01:13,034 - scanner.PingMonitor - INFO - 监控批次 35: 1/2 在线, 0/1 缓慢
+2025-05-16 20:01:18,043 - scanner.PingMonitor - INFO - 监控批次 36: 1/2 在线, 0/1 缓慢
+2025-05-16 20:01:23,035 - scanner.PingMonitor - INFO - 监控批次 37: 1/2 在线, 0/1 缓慢
+2025-05-16 20:01:25,144 - scanner.WebRiskScanner - INFO - 插件 POC漏洞扫描 检测到 vulnerability: https://192.168.31.1:443
+2025-05-16 20:01:25,145 - scanner.WebRiskScanner - INFO - 使用插件 安全响应头检测 扫描 https://192.168.31.1:443
+2025-05-16 20:01:25,307 - scanner.WebRiskScanner - INFO - 插件 安全响应头检测 检测到 security_header: https://192.168.31.1:443
+2025-05-16 20:01:25,309 - scanner.WebRiskScanner - INFO - 插件 安全响应头检测 检测到 security_header: https://192.168.31.1:443
+2025-05-16 20:01:25,309 - scanner.WebRiskScanner - INFO - 插件 安全响应头检测 检测到 security_header: https://192.168.31.1:443
+2025-05-16 20:01:25,310 - scanner.WebRiskScanner - INFO - 插件 安全响应头检测 检测到 security_header: https://192.168.31.1:443
+2025-05-16 20:01:25,311 - scanner.WebRiskScanner - INFO - 插件 安全响应头检测 检测到 security_header: https://192.168.31.1:443
+2025-05-16 20:01:25,311 - scanner.WebRiskScanner - INFO - 插件 安全响应头检测 检测到 security_header: https://192.168.31.1:443
+2025-05-16 20:01:25,311 - scanner.WebRiskScanner - INFO - 插件 安全响应头检测 检测到 security_header: https://192.168.31.1:443
+2025-05-16 20:01:25,312 - scanner.WebRiskScanner - INFO - 插件 安全响应头检测 检测到 security_header: https://192.168.31.1:443
+2025-05-16 20:01:25,312 - scanner.WebRiskScanner - INFO - 插件 安全响应头检测 检测到 security_header: https://192.168.31.1:443
+2025-05-16 20:01:25,313 - scanner.WebRiskScanner - INFO - 使用插件 SQL注入检测 扫描 https://192.168.31.1:443
+2025-05-16 20:01:28,037 - scanner.PingMonitor - INFO - 监控批次 38: 1/2 在线, 0/1 缓慢
+2025-05-16 20:01:33,046 - scanner.PingMonitor - INFO - 监控批次 39: 1/2 在线, 0/1 缓慢
+2025-05-16 20:01:38,037 - scanner.PingMonitor - INFO - 监控批次 40: 1/2 在线, 0/1 缓慢
+2025-05-16 20:01:43,044 - scanner.PingMonitor - INFO - 监控批次 41: 1/2 在线, 0/1 缓慢
+2025-05-16 20:01:45,186 - scanner.WebRiskScanner - INFO - 插件 SQL注入检测 检测到 vulnerability: https://192.168.31.1:443
+2025-05-16 20:01:45,188 - scanner.WebRiskScanner - INFO - 使用插件 通用漏洞检测 扫描 https://192.168.31.1:443
+2025-05-16 20:01:46,010 - scanner.WebRiskScanner - INFO - 插件 通用漏洞检测 检测到 vulnerability: https://192.168.31.1:443
+2025-05-16 20:01:46,011 - scanner.WebRiskScanner - INFO - 使用插件 WAF检测 扫描 https://192.168.31.1:443
+2025-05-16 20:01:47,001 - scanner.WebRiskScanner - INFO - 插件 WAF检测 检测到 waf: https://192.168.31.1:443
+2025-05-16 20:01:47,002 - scanner.WebRiskScanner - INFO - 使用插件 XSS漏洞检测 扫描 https://192.168.31.1:443
+2025-05-16 20:01:48,041 - scanner.PingMonitor - INFO - 监控批次 42: 1/2 在线, 0/1 缓慢
+2025-05-16 20:01:53,532 - scanner.PingMonitor - INFO - 监控批次 43: 1/2 在线, 0/1 缓慢
+2025-05-16 20:01:58,535 - scanner.PingMonitor - INFO - 监控批次 44: 1/2 在线, 0/1 缓慢
+2025-05-16 20:02:00,177 - ss0t-scna.gui.webdirscanner - INFO - 开始 Web目录扫描 扫描: http://192.168.1.1
+2025-05-16 20:02:00,177 - scanner.WebDirScanner - INFO - Starting WebDirScanner scan with task_id: 33995e1e-66e9-4a37-b11a-bc33c2ea66ca
+2025-05-16 20:02:00,178 - scanner.WebDirScanner - INFO - 开始扫描目标: http://192.168.1.1/
+2025-05-16 20:02:00,178 - scanner.WebDirScanner - INFO - 未指定字典文件，使用内置字典
+2025-05-16 20:02:00,180 - scanner.WebDirScanner - INFO - 处理扩展名后，字典大小从 98 增加到 1134
+2025-05-16 20:02:00,180 - scanner.WebDirScanner - INFO - 字典加载完成，共 1134 个路径
+2025-05-16 20:02:03,541 - scanner.PingMonitor - INFO - 监控批次 45: 1/2 在线, 0/1 缓慢
+2025-05-16 20:02:07,189 - scanner.WebRiskScanner - INFO - 插件 XSS漏洞检测 发现风险: 未知 - https://192.168.31.1:443
+2025-05-16 20:02:07,344 - scanner.WebRiskScanner - INFO - URL https://192.168.31.1:443 的服务器信息: nginx/1.12.2, 技术: Nginx, ASP.NET
+2025-05-16 20:02:07,344 - scanner.WebRiskScanner - INFO - 扫描完成，总用时: 129秒
+2025-05-16 20:02:07,346 - scanner.WebRiskScanner - INFO - 结果统计: {'basic_info': 9, 'server_info': 6, 'vulnerability': 9, 'security_header': 27, 'waf': 3, 'plugin_result': 3}
+2025-05-16 20:02:07,346 - scanner.WebRiskScanner - INFO - Scan completed: WebRiskScanner, records: 57, duration: 129.40s
+2025-05-16 20:02:08,546 - scanner.PingMonitor - INFO - 监控批次 46: 1/2 在线, 0/1 缓慢
+2025-05-16 20:02:13,533 - scanner.PingMonitor - INFO - 监控批次 47: 1/2 在线, 0/1 缓慢
+2025-05-16 20:02:18,534 - scanner.PingMonitor - INFO - 监控批次 48: 1/2 在线, 0/1 缓慢
+2025-05-16 20:02:23,531 - scanner.PingMonitor - INFO - 监控批次 49: 1/2 在线, 0/1 缓慢
+2025-05-16 20:02:24,323 - scanner.WebDirScanner - INFO - 扫描完成，共尝试 1134 个路径，发现 0 个结果
+2025-05-16 20:02:24,326 - scanner.WebDirScanner - INFO - Scan completed: WebDirScanner, records: 0, duration: 24.15s
+2025-05-16 20:02:24,329 - ss0t-scna.gui.webdirscanner - INFO - Web目录扫描 扫描完成: http://192.168.1.1
+2025-05-16 20:02:28,536 - scanner.PingMonitor - INFO - 监控批次 50: 1/2 在线, 0/1 缓慢
+2025-05-16 20:02:33,545 - scanner.PingMonitor - INFO - 监控批次 51: 1/2 在线, 0/1 缓慢
+2025-05-16 20:02:38,542 - scanner.PingMonitor - INFO - 监控批次 52: 1/2 在线, 0/1 缓慢
+2025-05-16 20:02:43,544 - scanner.PingMonitor - INFO - 监控批次 53: 1/2 在线, 0/1 缓慢
+2025-05-16 20:02:48,543 - scanner.PingMonitor - INFO - 监控批次 54: 1/2 在线, 0/1 缓慢
+2025-05-16 20:02:53,540 - scanner.PingMonitor - INFO - 监控批次 55: 1/2 在线, 0/1 缓慢
+2025-05-16 20:02:58,533 - scanner.PingMonitor - INFO - 监控批次 56: 1/2 在线, 0/1 缓慢
+2025-05-16 20:03:03,540 - scanner.PingMonitor - INFO - 监控批次 57: 1/2 在线, 0/1 缓慢
+2025-05-16 20:03:08,545 - scanner.PingMonitor - INFO - 监控批次 58: 1/2 在线, 0/1 缓慢
+2025-05-16 20:03:13,545 - scanner.PingMonitor - INFO - 监控批次 59: 1/2 在线, 0/1 缓慢
+2025-05-16 20:03:18,544 - scanner.PingMonitor - INFO - 监控批次 60: 1/2 在线, 0/1 缓慢
+2025-05-16 20:03:23,535 - scanner.PingMonitor - INFO - 监控批次 61: 1/2 在线, 0/1 缓慢
+2025-05-16 20:03:28,537 - scanner.PingMonitor - INFO - 监控批次 62: 1/2 在线, 0/1 缓慢
+2025-05-16 20:03:33,542 - scanner.PingMonitor - INFO - 监控批次 63: 1/2 在线, 0/1 缓慢
+2025-05-16 20:03:38,536 - scanner.PingMonitor - INFO - 监控批次 64: 1/2 在线, 0/1 缓慢
+2025-05-16 20:03:43,533 - scanner.PingMonitor - INFO - 监控批次 65: 1/2 在线, 0/1 缓慢
+2025-05-16 20:03:48,539 - scanner.PingMonitor - INFO - 监控批次 66: 1/2 在线, 0/1 缓慢
+2025-05-16 20:03:53,539 - scanner.PingMonitor - INFO - 监控批次 67: 1/2 在线, 0/1 缓慢
+2025-05-16 20:03:57,342 - ss0t-scna.plugin_config_editor - INFO - 已加载插件配置文件: C:\Users\Administrator\Desktop\kw\nettools\configs\plugins\myplugin.json
+2025-05-16 20:03:57,541 - ss0t-scna.plugin_config_editor - INFO - 开始解析配置文件: C:\Users\Administrator\Desktop\kw\nettools\configs\plugins\myplugin.json
+2025-05-16 20:03:57,550 - ss0t-scna.plugin_config_editor.threads - INFO - 发送解析完成信号: is_error=False, error_info=''
+2025-05-16 20:03:57,561 - ss0t-scna.plugin_config_editor - INFO - 解析完成: is_error=False, error_info='', parse_canceled=False
+2025-05-16 20:03:57,567 - ss0t-scna.plugin_config_editor - INFO - 用户点击了取消按钮
+2025-05-16 20:03:57,567 - ss0t-scna.plugin_config_editor - INFO - 解析已完成，不要处理取消操作
+2025-05-16 20:03:57,568 - ss0t-scna.plugin_config_editor - INFO - 解析成功，构建树视图
+2025-05-16 20:03:57,569 - ss0t-scna.plugin_config_editor - INFO - 树构建完成: 13 节点, 是否截断: False
+2025-05-16 20:03:57,772 - ss0t-scna.plugin_config_editor - INFO - 解析事件循环完成
+2025-05-16 20:03:58,537 - scanner.PingMonitor - INFO - 监控批次 68: 1/2 在线, 0/1 缓慢
+2025-05-16 20:04:00,720 - ss0t-scna.plugin_config_editor - INFO - 已加载插件配置文件: C:\Users\Administrator\Desktop\kw\nettools\configs\plugins\fingerprintscanner.json
+2025-05-16 20:04:00,921 - ss0t-scna.plugin_config_editor - INFO - 开始解析配置文件: C:\Users\Administrator\Desktop\kw\nettools\configs\plugins\fingerprintscanner.json
+2025-05-16 20:04:00,930 - ss0t-scna.plugin_config_editor.threads - INFO - 发送解析完成信号: is_error=False, error_info=''
+2025-05-16 20:04:00,944 - ss0t-scna.plugin_config_editor - INFO - 解析完成: is_error=False, error_info='', parse_canceled=False
+2025-05-16 20:04:00,948 - ss0t-scna.plugin_config_editor - INFO - 用户点击了取消按钮
+2025-05-16 20:04:00,948 - ss0t-scna.plugin_config_editor - INFO - 解析已完成，不要处理取消操作
+2025-05-16 20:04:00,948 - ss0t-scna.plugin_config_editor - INFO - 解析成功，构建树视图
+2025-05-16 20:04:00,950 - ss0t-scna.plugin_config_editor - INFO - 树构建完成: 52 节点, 是否截断: False
+2025-05-16 20:04:01,150 - ss0t-scna.plugin_config_editor - INFO - 解析事件循环完成
+2025-05-16 20:04:03,534 - scanner.PingMonitor - INFO - 监控批次 69: 1/2 在线, 0/1 缓慢
+2025-05-16 20:04:08,546 - scanner.PingMonitor - INFO - 监控批次 70: 1/2 在线, 0/1 缓慢
+2025-05-16 20:04:13,533 - scanner.PingMonitor - INFO - 监控批次 71: 1/2 在线, 0/1 缓慢
+2025-05-16 20:04:18,546 - scanner.PingMonitor - INFO - 监控批次 72: 1/2 在线, 0/1 缓慢
+2025-05-16 20:04:23,540 - scanner.PingMonitor - INFO - 监控批次 73: 1/2 在线, 0/1 缓慢
+2025-05-16 20:04:28,534 - scanner.PingMonitor - INFO - 监控批次 74: 1/2 在线, 0/1 缓慢
+2025-05-16 20:04:33,532 - scanner.PingMonitor - INFO - 监控批次 75: 1/2 在线, 0/1 缓慢
+2025-05-16 20:04:38,542 - scanner.PingMonitor - INFO - 监控批次 76: 1/2 在线, 0/1 缓慢
+2025-05-16 20:04:43,535 - scanner.PingMonitor - INFO - 监控批次 77: 1/2 在线, 0/1 缓慢
+2025-05-16 20:04:48,537 - scanner.PingMonitor - INFO - 监控批次 78: 1/2 在线, 0/1 缓慢
+2025-05-16 20:04:53,545 - scanner.PingMonitor - INFO - 监控批次 79: 1/2 在线, 0/1 缓慢
+2025-05-16 20:04:58,540 - scanner.PingMonitor - INFO - 监控批次 80: 1/2 在线, 0/1 缓慢
+2025-05-16 20:05:03,542 - scanner.PingMonitor - INFO - 监控批次 81: 1/2 在线, 0/1 缓慢
+2025-05-16 20:05:08,540 - scanner.PingMonitor - INFO - 监控批次 82: 1/2 在线, 0/1 缓慢
+2025-05-16 20:05:13,536 - scanner.PingMonitor - INFO - 监控批次 83: 1/2 在线, 0/1 缓慢
+2025-05-16 20:05:18,544 - scanner.PingMonitor - INFO - 监控批次 84: 1/2 在线, 0/1 缓慢
+2025-05-16 20:05:23,537 - scanner.PingMonitor - INFO - 监控批次 85: 1/2 在线, 0/1 缓慢
+2025-05-16 20:05:28,545 - scanner.PingMonitor - INFO - 监控批次 86: 1/2 在线, 0/1 缓慢
+2025-05-16 20:05:33,536 - scanner.PingMonitor - INFO - 监控批次 87: 1/2 在线, 0/1 缓慢

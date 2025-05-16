@@ -1,0 +1,15 @@
+{
+    "enabled": true,
+    "name": "我的自定义插件",
+    "description": "这是一个自定义插件示例",
+    "version": "1.0.0",
+    "timeout": 10,
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36",
+    "verify_ssl": false,
+    "custom_parameters": {
+        "param1": "value1",
+        "param2": "value2"
+    },
+    "max_retries": 3,
+    "retry_interval": 1.5
+}

@@ -1,0 +1,40 @@
+# 指纹定义文件
+# 格式: 技术名:路径:匹配模式[:header[:regex]]
+
+# Web框架
+Rails:/rails/info:Ruby on Rails
+FastAPI:/docs:fastapi
+Gin:/api/:gin-gonic
+Beego:/static/:beego
+Tornado:/static/:tornado
+
+# CMS系统
+Wordpress:/wp-includes/:wordpress
+Joomla:/media/jui/:joomla
+Typo3:/typo3/:typo3
+Drupal:/sites/all/:drupal
+PHPCMS:/phpcms/:phpcms
+EmpireCMS:/e/data/:empirecms
+
+# 数据库
+MySQL:/phpmyadmin/:phpmyadmin
+PostgreSQL:/pgadmin/:pgadmin
+Oracle:/apex/:oracle
+SQLServer:/sqlmanager/:sqlserver
+
+# 安全防护
+WAF:/challenge:forbidden:Server:cloudflare
+CDN:/static/:CDN:Server:cloudfront
+SSL:/login:SSL:Server-Name:letsencrypt
+
+# API框架
+GraphQL:/graphql:graphql
+RESTful:/api/v:REST
+SOAP:/soap/:soap
+gRPC:/grpc/:grpc
+
+# 前端框架
+Svelte:/svelte-:svelte
+Next.js:/_next/:next.js
+Nuxt.js:/_nuxt/:nuxt.js
+React Native:/assets/:react-native 

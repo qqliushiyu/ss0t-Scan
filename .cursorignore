@@ -1,0 +1,27 @@
+# Add directories or file patterns to ignore during indexing (e.g. foo/ or *.csv)
+
+.cursorignore
+.gitignore
+.vscode
+.env
+.env.local
+*.log
+*.log.*
+*.log.*.*
+*.log.*.*.*
+*.log.*.*.*.*
+*.log.*.*.*.*.*
+*.log.*.*.*.*.*.*
+*.pyc
+*.pyo
+*.pyd
+*.pyw
+*.pyz
+*.pywz
+*.pywz.*
+*.csv
+*.jsonl
+*.jsonl.*
+*.jsonl.*.*
+*.jsonl.*.*.*
+*.jsonl.*.*.*.*

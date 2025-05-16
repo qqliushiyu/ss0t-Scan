@@ -1,0 +1,8 @@
+README.md
+setup.py
+nettools.egg-info/PKG-INFO
+nettools.egg-info/SOURCES.txt
+nettools.egg-info/dependency_links.txt
+nettools.egg-info/entry_points.txt
+nettools.egg-info/requires.txt
+nettools.egg-info/top_level.txt

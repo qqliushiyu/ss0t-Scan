@@ -1,0 +1,40 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# 网络扫描工具箱概述
+
+网络扫描工具箱是一个功能强大的多模块网络扫描工具集合，采用模块化设计，提供命令行和图形界面两种操作方式。
+
+## 核心功能
+
+- **主机扫描** - [core/host_scan.py](mdc:core/host_scan.py) - 发现局域网或IP范围内的活跃主机
+- **端口扫描** - [core/port_scan.py](mdc:core/port_scan.py) - 检测主机开放的端口和服务
+- **DNS检测** - [core/dns_check.py](mdc:core/dns_check.py) - 域名解析、记录查询和子域名探测
+- **路由追踪** - [core/traceroute.py](mdc:core/traceroute.py) - 网络路径分析和链路状态监测
+- **Ping监控** - [core/ping_monitor.py](mdc:core/ping_monitor.py) - 实时监控主机状态和网络质量
+- **TCP Ping** - [core/tcp_ping.py](mdc:core/tcp_ping.py) - TCP端口连通性测试
+- **Web风险扫描** - [core/web_risk_scan.py](mdc:core/web_risk_scan.py) - Web安全风险检测
+- **Web目录扫描** - [core/web_dir_scan.py](mdc:core/web_dir_scan.py) - Web目录遍历检测
+
+## 项目结构
+
+- **核心组件** - [core/](mdc:core) - 扫描模块和基础框架
+- **图形界面** - [gui/](mdc:gui) - PyQt5实现的用户界面
+- **命令行接口** - [cli/main.py](mdc:cli/main.py) - 命令行操作入口
+- **工具类** - [utils/](mdc:utils) - 通用工具和辅助函数
+- **配置管理** - [config/](mdc:config) - 全局和模块级配置
+- **插件扩展** - [plugins/](mdc:plugins) - 自定义扫描模块扩展
+
+## 使用方式
+
+- **图形界面**: `python -m gui.main` 或 `nettools-gui`
+- **命令行**: `python -m cli.main [命令] [参数]` 或 `nettools-cli [命令] [参数]`
+
+## 依赖要求
+
+- Python 3.8+
+- PyQt5, dnspython, pandas, openpyxl等第三方库
+- 详见 [requirements.txt](mdc:requirements.txt)
+

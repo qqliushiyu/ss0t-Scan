@@ -1,0 +1,73 @@
+{
+    "enabled": true,
+    "name": "Web指纹识别",
+    "description": "检测网站使用的Web服务器、框架、CMS等技术栈",
+    "version": "1.0.0",
+    "timeout": 15,
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36",
+    "verify_ssl": false,
+    "custom_fingerprints": {
+        "ThinkPHP": [
+            {
+                "path": "/index.php",
+                "pattern": "ThinkPHP"
+            },
+            {
+                "path": "/Public/static/",
+                "pattern": "ThinkPHP"
+            }
+        ],
+        "Discuz": [
+            {
+                "path": "/forum.php",
+                "pattern": "Discuz"
+            },
+            {
+                "path": "/static/image/common/",
+                "pattern": "Discuz"
+            }
+        ],
+        "DedeCMS": [
+            {
+                "path": "/dede/",
+                "pattern": "DedeCMS"
+            },
+            {
+                "path": "/templets/default/",
+                "pattern": "DedeCMS"
+            }
+        ],
+        "Elasticsearch": [
+            {
+                "path": "/",
+                "content": "elasticsearch"
+            }
+        ],
+        "Redis": [
+            {
+                "path": "/",
+                "content": "redis"
+            }
+        ],
+        "MongoDB": [
+            {
+                "path": "/",
+                "content": "mongodb"
+            }
+        ],
+        "Node.js": [
+            {
+                "path": "/",
+                "header": "X-Powered-By",
+                "regex": "Node|nodejs"
+            }
+        ],
+        "微信小程序": [
+            {
+                "path": "/",
+                "content": "wx\\.login|wx\\.request|wx\\.getSetting"
+            }
+        ]
+    },
+    "fingerprint_file": "configs/fingerprints.txt"
+}

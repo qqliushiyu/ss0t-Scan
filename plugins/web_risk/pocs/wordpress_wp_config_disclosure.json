@@ -1,0 +1,48 @@
+{
+    "name": "WordPress配置文件泄露漏洞",
+    "id": "wordpress-wp-config-disclosure",
+    "description": "WordPress网站中可能存在配置文件泄露漏洞，攻击者可以通过特定URL访问wp-config.php文件的备份或临时文件，从而获取数据库凭据等敏感信息。",
+    "author": "NetTools",
+    "type": "信息泄露",
+    "severity": "high",
+    "references": [
+        "https://www.exploit-db.com/ghdb/4207",
+        "https://cxsecurity.com/issue/WLB-2020030114"
+    ],
+    "request": {
+        "method": "GET",
+        "paths": [
+            "/wp-config.php.bak",
+            "/wp-config.php~",
+            "/wp-config.php.old",
+            "/wp-config.php.save",
+            "/wp-config.php.swp",
+            "/wp-config.php.swo",
+            "/wp-config.php.conf",
+            "/.wp-config.php.swp"
+        ]
+    },
+    "matchers": [
+        {
+            "type": "word",
+            "part": "body",
+            "words": [
+                "DB_NAME",
+                "DB_USER",
+                "DB_PASSWORD",
+                "DB_HOST",
+                "define('DB_",
+                "define(\"DB_"
+            ],
+            "condition": "or"
+        },
+        {
+            "type": "status",
+            "status": [200]
+        }
+    ],
+    "payloads": [],
+    "check_location": [
+        "response_body"
+    ]
+} 

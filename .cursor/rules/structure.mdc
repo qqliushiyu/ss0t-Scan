@@ -1,0 +1,97 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+rules:
+  - name: 项目目标
+    description: >
+      构建一个可扩展的网络安全扫描工具平台，具备图形界面（pyqt5）和命令行支持（argparse/click），
+      支持多种网络扫描模块（主机扫描、端口扫描、DNS检测、路由追踪、Ping监控、TCP Ping、Web风险扫描、Web目录扫描），
+      各模块解耦、支持插件扩展、结果导出与配置管理。
+
+  - name: 核心架构设计
+    description: >
+      项目采用插件式架构，核心模块位于 core/ 目录，各扫描功能模块继承 BaseScanner 基类，
+      并通过模块注册机制进行自动管理。所有扫描逻辑应与 UI 解耦，通过配置对象注入参数。
+
+  - name: 文件结构
+    description: |
+      - core/: 各类扫描模块与基础框架逻辑。
+      - gui/: 使用 pyqt5 实现图形界面，包含每个模块的面板与交互。
+      - cli/: 命令行入口，支持参数传入执行各类扫描任务。
+      - config/: 配置文件（INI），默认字典，任务模板等。
+      - plugins/: 第三方扫描模块扩展，需继承 BaseScanner。
+      - utils/: 常用工具函数，如 IP 解析、导出、日志等。
+      - results/: 所有扫描结果按模块分类导出。
+      - logs/: 日志文件，支持 debug/info/error。
+
+  - name: GUI 要求
+    description: >
+      图形界面应使用 wxPython 构建，支持：
+      - 每个模块对应一个面板（tab 或侧边切换）
+      - 表格显示扫描结果
+      - 扫描参数输入表单
+      - 可视化进度条、任务状态提示
+      - 弹窗或控制台输出错误信息
+      - 导出按钮支持 CSV/Excel/JSON 格式保存结果
+
+  - name: CLI 要求
+    description: >
+      使用 argparse 或 click 实现 CLI 支持，命令形式如：
+      python cli/main.py scan --module=host --ip=192.168.1.1/24 --timeout=1
+      CLI 支持列出模块、导出结果、自定义配置文件等功能。
+
+  - name: 每个扫描模块功能要求
+    description: |
+      - host_scan: 支持 ICMP、TCP Ping，自动识别在线主机。
+      - port_scan: 支持端口范围解析，服务识别，banner 抓取。
+      - dns_check: 支持域名解析、子域名探测、DNS记录类型查询。
+      - traceroute: 多平台路由跟踪，支持 UDP 和 ICMP 模式。
+      - ping_monitor: 实时 ping 某 IP 段并记录状态。
+      - tcp_ping: 检查 TCP 端口是否连通。
+      - web_risk_scan: 探测常见 Web 漏洞，识别 Web 服务信息。
+      - web_dir_scan: 使用字典爆破 Web 路径，支持响应码过滤。
+
+  - name: 可扩展性要求
+    description: >
+      所有扫描模块应基于统一接口 BaseScanner，支持在 plugins/ 中加入自定义插件。
+      插件注册时自动识别类名与模块名，加入主程序模块列表。参数通过配置对象注入。
+      GUI 与 CLI 均可加载 plugins 中模块。
+
+  - name: 配置管理
+    description: >
+      使用 config/settings.ini 存储全局参数（如超时时间、线程数、输出格式、默认字典路径）。
+      每个模块可定义默认配置或通过配置文件加载任务模板（JSON 或 INI 格式）。
+
+  - name: 导出功能
+    description: >
+      每个扫描模块结果可导出为 CSV、Excel 或 JSON。
+      导出功能应支持字段筛选与文件名自定义（例如 host_scan_2025-05-13.csv）。
+
+  - name: 日志记录
+    description: >
+      所有异常、操作与扫描结果记录到 logs/scanner.log。
+      支持 debug/info/warning/error 四级日志。
+      每个模块的异常应捕获并回传至 UI 和日志文件。
+
+  - name: 扩展功能（可选）
+    description: |
+      - 支持定时扫描任务（扫描调度器）
+      - 多任务并发扫描（任务队列）
+      - 分布式 Master-Worker 扫描（远程节点）
+      - 报告生成功能（导出 Markdown 或 PDF 格式安全报告）
+      - Web API 支持（RESTful 接口）
+
+  - name: 技术选型
+    description: >
+      使用 Python 3.9+，GUI 使用 pyqt5，建议打包使用 PyInstaller 或 cx_Freeze。
+      日志模块推荐使用 logging，配置加载使用 configparser。
+      异步模块可使用 threading / asyncio，根据模块需求选择。
+
+  - name: 开发约定
+    description: |
+      - 每个模块必须有 docstring 说明、输入输出说明
+      - 所有扫描逻辑不得写入 GUI 层
+      - 统一异常处理机制，返回状态、错误信息、数据结果
+      - 每个模块可单元测试验证，所有功能应可通过 CLI 独立运行

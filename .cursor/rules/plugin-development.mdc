@@ -1,0 +1,241 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# 插件开发指南
+
+## 插件架构
+
+网络工具箱支持通过插件机制扩展功能。插件应遵循以下架构：
+
+1. 放置在[plugins/](mdc:plugins/)目录下
+2. 实现[core/base_scanner.py](mdc:core/base_scanner.py)中的BaseScanner接口
+3. 提供必要的GUI面板（可选）
+
+## 创建插件
+
+### 1. 创建插件模块
+
+在plugins目录下创建你的插件模块，例如`plugins/ssl_scanner.py`：
+
+```python
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""
+SSL证书扫描器
+检查SSL证书有效性、加密算法强度和已知漏洞
+"""
+
+import socket
+import ssl
+from datetime import datetime
+from typing import Dict, List, Any, Tuple, Optional
+
+from core.base_scanner import BaseScanner, ScanResult
+
+class SslScanner(BaseScanner):
+    """SSL证书扫描器"""
+    
+    VERSION = "1.0.0"
+    
+    def validate_config(self) -> Tuple[bool, Optional[str]]:
+        """验证配置参数"""
+        # 必要参数检查
+        if 'target' not in self.config:
+            return False, "缺少目标参数: target"
+        
+        if 'port' not in self.config:
+            return False, "缺少端口参数: port"
+        
+        return True, None
+    
+    def run_scan(self) -> ScanResult:
+        """执行SSL扫描"""
+        target = self.config['target']
+        port = int(self.config.get('port', 443))
+        
+        try:
+            # 扫描实现...
+            results = []  # 存储结果
+            
+            # 创建SSL上下文
+            context = ssl.create_default_context()
+            context.check_hostname = False
+            context.verify_mode = ssl.CERT_NONE
+            
+            # 连接服务器
+            with socket.create_connection((target, port)) as sock:
+                with context.wrap_socket(sock, server_hostname=target) as ssock:
+                    # 获取证书信息
+                    cert = ssock.getpeercert(True)
+                    cert_decoded = ssl.DER_cert_to_PEM_cert(cert)
+                    
+                    # 填充结果...
+                    results.append({
+                        "host": target,
+                        "port": port,
+                        # ...其他结果字段
+                    })
+            
+            return ScanResult(success=True, data=results)
+        
+        except Exception as e:
+            self.logger.error(f"SSL扫描失败: {str(e)}")
+            return ScanResult(
+                success=False,
+                data=[],
+                error_msg=f"扫描错误: {str(e)}"
+            )
+```
+
+### 2. 创建GUI面板（可选）
+
+如果需要GUI支持，创建`plugins/ssl_scanner_panel.py`：
+
+```python
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""
+SSL扫描器GUI面板
+"""
+
+from PyQt5.QtWidgets import (
+    QVBoxLayout, QHBoxLayout, QFormLayout, QGroupBox,
+    QLineEdit, QPushButton, QTableWidget, QTableWidgetItem
+)
+
+from gui.panels.base_panel import BasePanel
+
+class SslScannerPanel(BasePanel):
+    """SSL扫描器面板"""
+    
+    def init_ui(self):
+        """初始化UI组件"""
+        # 主布局
+        layout = QVBoxLayout(self)
+        
+        # 参数表单
+        form_group = QGroupBox("SSL扫描参数")
+        form_layout = QFormLayout(form_group)
+        
+        # 目标输入
+        self.target_input = QLineEdit()
+        form_layout.addRow("目标主机:", self.target_input)
+        
+        # 端口输入
+        self.port_input = QLineEdit("443")
+        form_layout.addRow("端口:", self.port_input)
+        
+        # 控制按钮
+        self.button_layout = QHBoxLayout()
+        self.start_button = QPushButton("开始扫描")
+        self.start_button.clicked.connect(self.start_scan)
+        self.button_layout.addWidget(self.start_button)
+        
+        # 停止按钮
+        self.stop_button = QPushButton("停止")
+        self.stop_button.clicked.connect(self.stop_scan)
+        self.stop_button.setEnabled(False)
+        self.button_layout.addWidget(self.stop_button)
+        
+        # 结果表格
+        self.result_table = QTableWidget()
+        self.setup_table(self.result_table)
+        
+        # 组合布局
+        layout.addWidget(form_group)
+        layout.addLayout(self.button_layout)
+        layout.addWidget(self.result_table)
+    
+    def start_scan(self):
+        """开始扫描"""
+        # 收集参数
+        params = {
+            'target': self.target_input.text(),
+            'port': self.port_input.text()
+        }
+        
+        # 创建扫描线程
+        self.scan_thread = self.create_scan_thread("sslscanner", params)
+        self.start_scan_thread()
+    
+    def setup_table(self, table):
+        """设置结果表格"""
+        # 设置表头
+        headers = ["主机", "端口", "发行者", "主题", "有效期", "加密强度", "状态"]
+        table.setColumnCount(len(headers))
+        table.setHorizontalHeaderLabels(headers)
+        
+        # 调整表格属性
+        self.configure_table(table)
+    
+    def display_results(self, results):
+        """显示扫描结果"""
+        self.clear_table(self.result_table)
+        
+        # 填充结果
+        for row, data in enumerate(results):
+            self.result_table.insertRow(row)
+            self.result_table.setItem(row, 0, QTableWidgetItem(data.get("host", "")))
+            self.result_table.setItem(row, 1, QTableWidgetItem(str(data.get("port", ""))))
+            # ...填充其他列
+```
+
+### 3. 注册GUI面板
+
+在`plugins/__init__.py`中注册面板:
+
+```python
+# 暴露插件面板类
+from plugins.ssl_scanner_panel import SslScannerPanel
+
+__all__ = ['SslScannerPanel']
+```
+
+### 4. 添加面板到GUI主程序
+
+修改[gui/main.py](mdc:gui/main.py)的load_modules方法：
+
+```python
+try:
+    # 动态导入插件面板
+    import plugins
+    if hasattr(plugins, 'SslScannerPanel'):
+        ssl_panel = plugins.SslScannerPanel()
+        self.tab_widget.addTab(ssl_panel, "SSL证书检测")
+except ImportError:
+    logger.debug("未找到SSL扫描器插件")
+```
+
+## 插件发现机制
+
+插件自动发现由[core/scanner_manager.py](mdc:core/scanner_manager.py)中的ScannerManager负责：
+
+```python
+def discover_scanners(self) -> None:
+    """发现并注册所有可用的扫描模块"""
+    # ...
+    
+    # 扫描目录列表
+    scan_dirs = ['core', 'plugins']
+    
+    for scan_dir in scan_dirs:
+        if not os.path.exists(scan_dir):
+            logger.warning(f"Directory {scan_dir} does not exist, skipping")
+            continue
+        
+        logger.info(f"Discovering scanners in {scan_dir}")
+        
+        # ...遍历模块实现
+```
+
+## 最佳实践
+
+1. **命名约定**：插件类名应以Scanner结尾，如SslScanner
+2. **文档完善**：提供详细的docstring文档
+3. **异常处理**：捕获并处理所有可能的异常
+4. **界面一致性**：GUI面板应保持与内置模块一致的界面风格
+5. **版本标记**：通过VERSION属性指定插件版本

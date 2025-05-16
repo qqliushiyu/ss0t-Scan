@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web风险扫描报告</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        .section {
+            margin-bottom: 25px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .section-title {
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 8px;
+            margin-top: 0;
+            color: #2c3e50;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .summary-box {
+            display: inline-block;
+            padding: 10px 15px;
+            margin: 10px;
+            border-radius: 5px;
+            text-align: center;
+            min-width: 100px;
+        }
+        .vulnerable {
+            color: white;
+            background-color: #e74c3c;
+        }
+        .warning {
+            color: white;
+            background-color: #f39c12;
+        }
+        .safe {
+            color: white;
+            background-color: #2ecc71;
+        }
+        .severity-high {
+            background-color: #e74c3c;
+            color: white;
+            padding: 3px 6px;
+            border-radius: 3px;
+        }
+        .severity-medium {
+            background-color: #f39c12;
+            color: white;
+            padding: 3px 6px;
+            border-radius: 3px;
+        }
+        .severity-low {
+            background-color: #3498db;
+            color: white;
+            padding: 3px 6px;
+            border-radius: 3px;
+        }
+        .status-missing {
+            color: #e74c3c;
+        }
+        .status-present {
+            color: #2ecc71;
+        }
+        .url-card {
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        .url-header {
+            background-color: #3498db;
+            color: white;
+            padding: 10px 15px;
+        }
+        .url-content {
+            padding: 15px;
+        }
+        .subsection {
+            margin-bottom: 15px;
+        }
+        .subsection-title {
+            font-weight: bold;
+            border-bottom: 1px dashed #ccc;
+            padding-bottom: 5px;
+            margin-bottom: 10px;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            font-size: 0.8em;
+            color: #7f8c8d;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Web风险扫描报告</h1>
+        <p>生成时间: 2025-05-15 13:13:31</p>
+    </div>
+    
+    <div class="section">
+        <h2 class="section-title">扫描概要</h2>
+        <div style="text-align: center;">
+            <div class="summary-box vulnerable">
+                <h3>安全评分</h3>
+                <p style="font-size: 24px; font-weight: bold;">20分</p>
+            </div>
+            <div class="summary-box safe">
+                <h3>漏洞</h3>
+                <p style="font-size: 24px; font-weight: bold;">0</p>
+            </div>
+            <div class="summary-box warning">
+                <h3>配置问题</h3>
+                <p style="font-size: 24px; font-weight: bold;">23</p>
+            </div>
+            <div class="summary-box">
+                <h3>URL数量</h3>
+                <p style="font-size: 24px; font-weight: bold;">4</p>
+            </div>
+        </div>
+        
+        <h3>目标URL</h3>
+        <ul>
+            <li>http://192.168.31.177:80</li><li>https://192.168.31.68:443</li><li>http://192.168.31.1:80</li><li>https://192.168.31.1:443</li>
+        </ul>
+    </div>
+    
+    <div class="section">
+        <h2 class="section-title">详细结果</h2>
+
+        <div class="url-card">
+            <div class="url-header">
+                <h3>http://192.168.31.1:80</h3>
+                <p>风险评分: <span class="warning">65分</span> | 服务器: nginx/1.12.2 | WAF: 未检测</p>
+            </div>
+            <div class="url-content">
+
+                <div class="subsection">
+                    <h4 class="subsection-title">安全响应头</h4>
+                    <table>
+                        <tr>
+                            <th>响应头</th>
+                            <th>状态</th>
+                            <th>说明</th>
+                            <th>建议</th>
+                        </tr>
+
+                        <tr>
+                            <td>Strict-Transport-Security</td>
+                            <td class="status-missing">{"missing": "缺失", "present": "存在"}[status]</td>
+                            <td>HSTS可防止SSL剥离攻击</td>
+                            <td>添加头 Strict-Transport-Security: max-age=31536000; includeSubDomains</td>
+                        </tr>
+
+                        <tr>
+                            <td>Content-Security-Policy</td>
+                            <td class="status-missing">{"missing": "缺失", "present": "存在"}[status]</td>
+                            <td>CSP减少XSS风险</td>
+                            <td>实施适当的内容安全策略</td>
+                        </tr>
+
+                        <tr>
+                            <td>X-Content-Type-Options</td>
+                            <td class="status-missing">{"missing": "缺失", "present": "存在"}[status]</td>
+                            <td>防止MIME类型嗅探</td>
+                            <td>添加头 X-Content-Type-Options: nosniff</td>
+                        </tr>
+
+                        <tr>
+                            <td>X-Frame-Options</td>
+                            <td class="status-missing">{"missing": "缺失", "present": "存在"}[status]</td>
+                            <td>防止点击劫持</td>
+                            <td>添加头 X-Frame-Options: DENY 或 SAMEORIGIN</td>
+                        </tr>
+
+                        <tr>
+                            <td>X-XSS-Protection</td>
+                            <td class="status-missing">{"missing": "缺失", "present": "存在"}[status]</td>
+                            <td>启用浏览器XSS过滤</td>
+                            <td>添加头 X-XSS-Protection: 1; mode=block</td>
+                        </tr>
+
+                        <tr>
+                            <td>Referrer-Policy</td>
+                            <td class="status-missing">{"missing": "缺失", "present": "存在"}[status]</td>
+                            <td>控制引用传递信息</td>
+                            <td>添加头 Referrer-Policy: strict-origin-when-cross-origin</td>
+                        </tr>
+
+                        <tr>
+                            <td>Permissions-Policy</td>
+                            <td class="status-missing">{"missing": "缺失", "present": "存在"}[status]</td>
+                            <td>控制浏览器特性</td>
+                            <td>实施适当的权限策略</td>
+                        </tr>
+
+                    </table>
+                </div>
+
+                <div class="subsection">
+                    <h4 class="subsection-title">服务器信息</h4>
+                    <p><strong>服务器:</strong> nginx/1.12.2</p>
+                    <p><strong>技术栈:</strong> Nginx, ASP.NET</p>
+                    <p><strong>WAF保护:</strong> 未检测</p>
+
+                </div>
+            </div>
+        </div>
+
+        <div class="url-card">
+            <div class="url-header">
+                <h3>https://192.168.31.1:443</h3>
+                <p>风险评分: <span class="warning">65分</span> | 服务器: nginx/1.12.2 | WAF: 未检测</p>
+            </div>
+            <div class="url-content">
+
+                <div class="subsection">
+                    <h4 class="subsection-title">安全响应头</h4>
+                    <table>
+                        <tr>
+                            <th>响应头</th>
+                            <th>状态</th>
+                            <th>说明</th>
+                            <th>建议</th>
+                        </tr>
+
+                        <tr>
+                            <td>Strict-Transport-Security</td>
+                            <td class="status-missing">{"missing": "缺失", "present": "存在"}[status]</td>
+                            <td>HSTS可防止SSL剥离攻击</td>
+                            <td>添加头 Strict-Transport-Security: max-age=31536000; includeSubDomains</td>
+                        </tr>
+
+                        <tr>
+                            <td>Content-Security-Policy</td>
+                            <td class="status-missing">{"missing": "缺失", "present": "存在"}[status]</td>
+                            <td>CSP减少XSS风险</td>
+                            <td>实施适当的内容安全策略</td>
+                        </tr>
+
+                        <tr>
+                            <td>X-Content-Type-Options</td>
+                            <td class="status-missing">{"missing": "缺失", "present": "存在"}[status]</td>
+                            <td>防止MIME类型嗅探</td>
+                            <td>添加头 X-Content-Type-Options: nosniff</td>
+                        </tr>
+
+                        <tr>
+                            <td>X-Frame-Options</td>
+                            <td class="status-missing">{"missing": "缺失", "present": "存在"}[status]</td>
+                            <td>防止点击劫持</td>
+                            <td>添加头 X-Frame-Options: DENY 或 SAMEORIGIN</td>
+                        </tr>
+
+                        <tr>
+                            <td>X-XSS-Protection</td>
+                            <td class="status-missing">{"missing": "缺失", "present": "存在"}[status]</td>
+                            <td>启用浏览器XSS过滤</td>
+                            <td>添加头 X-XSS-Protection: 1; mode=block</td>
+                        </tr>
+
+                        <tr>
+                            <td>Referrer-Policy</td>
+                            <td class="status-missing">{"missing": "缺失", "present": "存在"}[status]</td>
+                            <td>控制引用传递信息</td>
+                            <td>添加头 Referrer-Policy: strict-origin-when-cross-origin</td>
+                        </tr>
+
+                        <tr>
+                            <td>Permissions-Policy</td>
+                            <td class="status-missing">{"missing": "缺失", "present": "存在"}[status]</td>
+                            <td>控制浏览器特性</td>
+                            <td>实施适当的权限策略</td>
+                        </tr>
+
+                    </table>
+                </div>
+
+                <div class="subsection">
+                    <h4 class="subsection-title">服务器信息</h4>
+                    <p><strong>服务器:</strong> nginx/1.12.2</p>
+                    <p><strong>技术栈:</strong> Nginx, ASP.NET</p>
+                    <p><strong>WAF保护:</strong> 未检测</p>
+
+                </div>
+            </div>
+        </div>
+
+        <div class="url-card">
+            <div class="url-header">
+                <h3>https://192.168.31.68:443</h3>
+                <p>风险评分: <span class="safe">90分</span> | 服务器:  | WAF: 未检测</p>
+            </div>
+            <div class="url-content">
+
+                <div class="subsection">
+                    <h4 class="subsection-title">安全响应头</h4>
+                    <table>
+                        <tr>
+                            <th>响应头</th>
+                            <th>状态</th>
+                            <th>说明</th>
+                            <th>建议</th>
+                        </tr>
+
+                        <tr>
+                            <td>Strict-Transport-Security</td>
+                            <td class="status-present">{"missing": "缺失", "present": "存在"}[status]</td>
+                            <td>HSTS可防止SSL剥离攻击</td>
+                            <td></td>
+                        </tr>
+
+                        <tr>
+                            <td>Content-Security-Policy</td>
+                            <td class="status-present">{"missing": "缺失", "present": "存在"}[status]</td>
+                            <td>CSP减少XSS风险</td>
+                            <td></td>
+                        </tr>
+
+                        <tr>
+                            <td>X-Content-Type-Options</td>
+                            <td class="status-present">{"missing": "缺失", "present": "存在"}[status]</td>
+                            <td>防止MIME类型嗅探</td>
+                            <td></td>
+                        </tr>
+
+                        <tr>
+                            <td>X-Frame-Options</td>
+                            <td class="status-present">{"missing": "缺失", "present": "存在"}[status]</td>
+                            <td>防止点击劫持</td>
+                            <td></td>
+                        </tr>
+
+                        <tr>
+                            <td>X-XSS-Protection</td>
+                            <td class="status-present">{"missing": "缺失", "present": "存在"}[status]</td>
+                            <td>启用浏览器XSS过滤</td>
+                            <td></td>
+                        </tr>
+
+                        <tr>
+                            <td>Referrer-Policy</td>
+                            <td class="status-missing">{"missing": "缺失", "present": "存在"}[status]</td>
+                            <td>控制引用传递信息</td>
+                            <td>添加头 Referrer-Policy: strict-origin-when-cross-origin</td>
+                        </tr>
+
+                        <tr>
+                            <td>Permissions-Policy</td>
+                            <td class="status-missing">{"missing": "缺失", "present": "存在"}[status]</td>
+                            <td>控制浏览器特性</td>
+                            <td>实施适当的权限策略</td>
+                        </tr>
+
+                    </table>
+                </div>
+
+                <div class="subsection">
+                    <h4 class="subsection-title">服务器信息</h4>
+                    <p><strong>服务器:</strong> </p>
+                    <p><strong>技术栈:</strong> ASP.NET</p>
+                    <p><strong>WAF保护:</strong> 未检测</p>
+
+                </div>
+            </div>
+        </div>
+
+        <div class="url-card">
+            <div class="url-header">
+                <h3>http://192.168.31.177:80</h3>
+                <p>风险评分: <span class="warning">65分</span> | 服务器: Microsoft-IIS/10.0 | WAF: 未检测</p>
+            </div>
+            <div class="url-content">
+
+                <div class="subsection">
+                    <h4 class="subsection-title">安全响应头</h4>
+                    <table>
+                        <tr>
+                            <th>响应头</th>
+                            <th>状态</th>
+                            <th>说明</th>
+                            <th>建议</th>
+                        </tr>
+
+                        <tr>
+                            <td>Strict-Transport-Security</td>
+                            <td class="status-missing">{"missing": "缺失", "present": "存在"}[status]</td>
+                            <td>HSTS可防止SSL剥离攻击</td>
+                            <td>添加头 Strict-Transport-Security: max-age=31536000; includeSubDomains</td>
+                        </tr>
+
+                        <tr>
+                            <td>Content-Security-Policy</td>
+                            <td class="status-missing">{"missing": "缺失", "present": "存在"}[status]</td>
+                            <td>CSP减少XSS风险</td>
+                            <td>实施适当的内容安全策略</td>
+                        </tr>
+
+                        <tr>
+                            <td>X-Content-Type-Options</td>
+                            <td class="status-missing">{"missing": "缺失", "present": "存在"}[status]</td>
+                            <td>防止MIME类型嗅探</td>
+                            <td>添加头 X-Content-Type-Options: nosniff</td>
+                        </tr>
+
+                        <tr>
+                            <td>X-Frame-Options</td>
+                            <td class="status-missing">{"missing": "缺失", "present": "存在"}[status]</td>
+                            <td>防止点击劫持</td>
+                            <td>添加头 X-Frame-Options: DENY 或 SAMEORIGIN</td>
+                        </tr>
+
+                        <tr>
+                            <td>X-XSS-Protection</td>
+                            <td class="status-missing">{"missing": "缺失", "present": "存在"}[status]</td>
+                            <td>启用浏览器XSS过滤</td>
+                            <td>添加头 X-XSS-Protection: 1; mode=block</td>
+                        </tr>
+
+                        <tr>
+                            <td>Referrer-Policy</td>
+                            <td class="status-missing">{"missing": "缺失", "present": "存在"}[status]</td>
+                            <td>控制引用传递信息</td>
+                            <td>添加头 Referrer-Policy: strict-origin-when-cross-origin</td>
+                        </tr>
+
+                        <tr>
+                            <td>Permissions-Policy</td>
+                            <td class="status-missing">{"missing": "缺失", "present": "存在"}[status]</td>
+                            <td>控制浏览器特性</td>
+                            <td>实施适当的权限策略</td>
+                        </tr>
+
+                    </table>
+                </div>
+
+                <div class="subsection">
+                    <h4 class="subsection-title">服务器信息</h4>
+                    <p><strong>服务器:</strong> Microsoft-IIS/10.0</p>
+                    <p><strong>技术栈:</strong> IIS, ASP.NET</p>
+                    <p><strong>WAF保护:</strong> 未检测</p>
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+    
+    <div class="section">
+        <h2 class="section-title">扫描配置</h2>
+        <table>
+            <tr>
+                <th>配置项</th>
+                <th>值</th>
+            </tr>
+
+            <tr>
+                <td>threads</td>
+                <td>200</td>
+            </tr>
+
+            <tr>
+                <td>timeout</td>
+                <td>3</td>
+            </tr>
+
+            <tr>
+                <td>verify_ssl</td>
+                <td>False</td>
+            </tr>
+
+            <tr>
+                <td>follow_redirects</td>
+                <td>True</td>
+            </tr>
+
+        </table>
+    </div>
+    
+    <div class="section">
+        <h2 class="section-title">使用的插件</h2>
+        <table>
+            <tr>
+                <th>插件名称</th>
+                <th>版本</th>
+                <th>描述</th>
+            </tr>
+
+            <tr>
+                <td>Web指纹识别</td>
+                <td>1.0.0</td>
+                <td>检测网站使用的Web服务器、框架、CMS等技术栈</td>
+            </tr>
+
+            <tr>
+                <td>安全响应头检测</td>
+                <td>1.0.0</td>
+                <td>检查Web服务器是否配置了安全相关的HTTP头</td>
+            </tr>
+
+            <tr>
+                <td>SQL注入检测</td>
+                <td>1.0.0</td>
+                <td>检测Web应用是否存在SQL注入漏洞</td>
+            </tr>
+
+            <tr>
+                <td>通用漏洞检测</td>
+                <td>1.0.0</td>
+                <td>检测Web应用是否存在目录遍历、文件包含、敏感文件等漏洞</td>
+            </tr>
+
+            <tr>
+                <td>WAF检测</td>
+                <td>1.0.0</td>
+                <td>检测Web应用是否受到Web应用防火墙(WAF)保护</td>
+            </tr>
+
+            <tr>
+                <td>XSS漏洞检测</td>
+                <td>1.0.0</td>
+                <td>检测Web应用是否存在跨站脚本攻击漏洞</td>
+            </tr>
+
+        </table>
+    </div>
+    
+    <div class="footer">
+        <p>此报告由ss0t-Scan Web风险扫描模块生成</p>
+        <p>© 2025 版权所有</p>
+    </div>
+</body>
+</html>

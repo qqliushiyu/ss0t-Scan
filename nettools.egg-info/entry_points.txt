@@ -1,0 +1,4 @@
+[console_scripts]
+nettools-cli = cli.main:main
+nettools-gui = gui.main:main
+

@@ -1,0 +1,55 @@
+{
+    "enabled": true,
+    "name": "WAF检测",
+    "description": "检测目标网站是否使用WAF防护",
+    "version": "1.0.0",
+    "timeout": 10,
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36",
+    "verify_ssl": false,
+    "custom_waf_signatures": {
+        "360网站卫士": [
+            "360wzws",
+            "wangzhan.360.cn",
+            "transfer.is.blocked"
+        ],
+        "阿里云盾": [
+            "aliyun",
+            "aliyungf_tc",
+            "aliyun-waf"
+        ],
+        "腾讯云WAF": [
+            "tencent-cdn",
+            "tencent-waf",
+            "tgw.browser.qq.com"
+        ],
+        "华为云WAF": [
+            "hwcloudsec",
+            "hwcdn",
+            "huaweicloud"
+        ],
+        "百度云加速": [
+            "yunjiasu-nginx",
+            "fhl",
+            "baiduspeed"
+        ],
+        "安全狗": [
+            "safedog",
+            "waf.safedog.cn",
+            "safedog-flow-item"
+        ],
+        "宝塔WAF": [
+            "btpanel",
+            "BT-WAF",
+            "bt.cn"
+        ]
+    },
+    "test_payloads": [
+        "/?id=1' OR 1=1 --",
+        "/?id=<script>alert(1)</script>",
+        "/?id=../../etc/passwd",
+        "/?id=union select 1,2,3",
+        "/?id=AND 1=1 UNION ALL SELECT"
+    ],
+    "max_retries": 3,
+    "retry_interval": 1.5
+}

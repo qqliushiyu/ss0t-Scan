@@ -1,0 +1,69 @@
+# Web目录扫描常用路径字典
+# 常见管理后台路径
+admin
+administrator
+wp-admin
+phpmyadmin
+manager
+manage
+login
+wp-login.php
+user
+users
+backend
+console
+
+# 常见文件
+robots.txt
+sitemap.xml
+.htaccess
+.git
+.svn
+.env
+readme.md
+README.md
+LICENSE
+CHANGELOG
+index.bak
+config.php.bak
+config.bak
+web.config
+
+# 常见目录
+assets
+static
+uploads
+images
+img
+css
+js
+backup
+backups
+bak
+temp
+tmp
+logs
+log
+api
+docs
+test
+admin
+config
+data
+database
+install
+
+# 敏感文件
+phpinfo.php
+info.php
+test.php
+server-status
+server-info
+
+# 扩展目录
+api/v1
+api/v2
+admin/login
+admin/index
+admin/images
+admin/uploads 

@@ -1,0 +1,87 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# 扫描模块开发指南
+
+## 基础架构
+
+所有扫描模块必须继承自[core/base_scanner.py](mdc:core/base_scanner.py)中的BaseScanner基类，并实现必要的抽象方法。
+
+## 模块实现步骤
+
+1. **创建扫描器类**：
+   ```python
+   from core.base_scanner import BaseScanner, ScanResult
+   
+   class MyScanner(BaseScanner):
+       """自定义扫描器描述"""
+       
+       VERSION = "1.0.0"  # 模块版本
+   ```
+
+2. **实现配置验证方法**：
+   ```python
+   def validate_config(self) -> Tuple[bool, Optional[str]]:
+       """验证配置参数"""
+       # 检查必要参数
+       if 'target' not in self.config:
+           return False, "缺少目标参数: target"
+       
+       # 验证通过
+       return True, None
+   ```
+
+3. **实现扫描逻辑**：
+   ```python
+   def run_scan(self) -> ScanResult:
+       """执行扫描操作"""
+       try:
+           # 扫描实现逻辑
+           results = []  # 结果列表
+           
+           # 返回结果
+           return ScanResult(success=True, data=results)
+       except Exception as e:
+           self.logger.error(f"扫描失败: {str(e)}")
+           return ScanResult(success=False, data=[], error_msg=str(e))
+   ```
+
+## 配置管理
+
+扫描模块配置通过[utils/config.py](mdc:utils/config.py)的ConfigManager加载，默认配置应在DEFAULT_CONFIG中定义：
+
+```python
+# 默认端口扫描配置
+"port_scan": {
+    "port_timeout": "0.5",
+    "common_ports": "21,22,23,25,53,80,443,3306,8080",
+    "port_threads": "100",
+    "get_service": "true"
+}
+```
+
+## GUI面板实现
+
+1. 新建面板类继承自[gui/panels/base_panel.py](mdc:gui/panels/base_panel.py)中的BasePanel
+
+2. 实现必要的UI组件和事件处理
+
+3. 在[gui/main.py](mdc:gui/main.py)的load_modules方法中添加面板注册
+
+## 命令行支持
+
+在[cli/main.py](mdc:cli/main.py)中的参数解析器中添加扫描模块的支持。
+
+## 最佳实践
+
+1. **参数验证**：确保所有输入参数经过严格验证
+
+2. **异常处理**：捕获所有可能的异常并提供详细日志
+
+3. **模块化设计**：扫描逻辑与展示逻辑分离
+
+4. **性能优化**：考虑并发和异步处理大量请求
+
+5. **文档完善**：提供详细的docstring文档

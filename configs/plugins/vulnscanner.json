@@ -1,0 +1,66 @@
+{
+    "enabled": true,
+    "name": "漏洞扫描",
+    "description": "检测Web应用的常见漏洞",
+    "version": "1.0.0",
+    "timeout": 15,
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36",
+    "verify_ssl": false,
+    "scan_depth": 2,
+    "max_urls_per_domain": 100,
+    "custom_paths": {
+        "SQL注入": [
+            "/search.php",
+            "/product.php",
+            "/news.php",
+            "/admin/query.php",
+            "/api/article.php"
+        ],
+        "XSS": [
+            "/comment.php",
+            "/feedback.php",
+            "/user/profile.php",
+            "/search/",
+            "/message.php"
+        ],
+        "目录遍历": [
+            "/include/",
+            "/upload/",
+            "/files/",
+            "/download.php",
+            "/static/files/"
+        ],
+        "文件包含": [
+            "/include.php",
+            "/load.php",
+            "/require.php",
+            "/inc/",
+            "/view.php"
+        ],
+        "敏感文件": [
+            "/.git/",
+            "/.svn/",
+            "/.env",
+            "/config.php.bak",
+            "/database.yml",
+            "/wp-config.php.bak",
+            "/config/database.yml",
+            "/application/configs/",
+            "/server-status",
+            "/phpinfo.php",
+            "/info.php",
+            "/test.php"
+        ]
+    },
+    "detection_threads": 10,
+    "follow_redirects": true,
+    "cookies": "",
+    "authentication": {
+        "enabled": false,
+        "login_url": "",
+        "username_field": "",
+        "password_field": "",
+        "username": "",
+        "password": ""
+    }
+}

@@ -1,0 +1,2 @@
+ip,status,response_time,mac_address,hostname,os
+127.0.0.1,up,0.0,,DESKTOP-L78THVD,Windows/Linux/MacOS

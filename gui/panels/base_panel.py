@@ -122,7 +122,7 @@ class BasePanel(QWidget):
         super().__init__(parent)
         
         # 获取日志记录器
-        self.logger = logging.getLogger(f"ss0t-scna.gui.{self.MODULE_ID}")
+        self.logger = logging.getLogger(f"nettools.gui.{self.MODULE_ID}")
         
         # 创建扫描线程
         self.scan_thread = None

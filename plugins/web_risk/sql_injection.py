@@ -19,7 +19,7 @@ class SQLInjectionScanner(WebRiskPlugin):
     NAME = "SQL注入检测"
     DESCRIPTION = "检测Web应用是否存在SQL注入漏洞"
     VERSION = "1.0.0"
-    AUTHOR = "ss0t-scna"
+    AUTHOR = "NetTools"
     CATEGORY = "漏洞检测"
     
     # SQL注入测试负载
@@ -104,6 +104,11 @@ class SQLInjectionScanner(WebRiskPlugin):
         """
         results = []
         
+        # 检查是否已停止
+        if self._stopped:
+            self.logger.info("SQL注入检测已停止")
+            return []
+        
         # 确保target以/结尾
         if not target.endswith('/'):
             target = target + '/'
@@ -126,10 +131,20 @@ class SQLInjectionScanner(WebRiskPlugin):
         
         # 测试每个路径
         for path, param in test_paths:
+            # 检查是否已停止
+            if self._stopped:
+                self.logger.info("SQL注入检测已停止")
+                return results
+                
             url = urljoin(target, path.lstrip('/'))
             
             # 测试每个负载
             for payload in self.PAYLOADS:
+                # 检查是否已停止
+                if self._stopped:
+                    self.logger.info("SQL注入检测已停止")
+                    return results
+                    
                 # 构造请求参数
                 params = {param: payload}
                 
@@ -167,6 +182,11 @@ class SQLInjectionScanner(WebRiskPlugin):
                     self.logger.warning(f"测试 {url} 时出错: {str(e)}")
                     continue
         
+        # 检查是否已停止
+        if self._stopped:
+            self.logger.info("SQL注入检测已停止")
+            return results
+            
         # 如果没有发现漏洞，添加一个安全的结果
         if not results:
             results.append({
@@ -179,6 +199,11 @@ class SQLInjectionScanner(WebRiskPlugin):
             })
         
         return results
+    
+    def stop(self) -> None:
+        """停止SQL注入检测"""
+        self._stopped = True
+        self.logger.info("SQL注入检测插件已接收停止信号")
         
     def validate_config(self) -> tuple:
         """验证配置"""

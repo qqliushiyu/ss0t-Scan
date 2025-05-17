@@ -19,9 +19,10 @@ from PyQt5.QtWidgets import (
     QLineEdit, QPushButton, QRadioButton, QButtonGroup, QProgressBar,
     QWidget, QTabWidget, QTableWidget, QTableWidgetItem, QHeaderView,
     QCheckBox, QSpinBox, QMessageBox, QDialog, QDialogButtonBox,
-    QTextEdit, QSplitter, QComboBox, QFileDialog, QProgressDialog
+    QTextEdit, QSplitter, QComboBox, QFileDialog, QProgressDialog,
+    QApplication
 )
-from PyQt5.QtCore import Qt, QThread, pyqtSignal, QObject, QTimer
+from PyQt5.QtCore import Qt, QThread, pyqtSignal, QObject, QTimer, QMetaType
 from PyQt5.QtGui import QIcon, QColor, QBrush
 
 from core.web_risk_scan import WebRiskScanner
@@ -31,7 +32,7 @@ from plugins import plugin_manager
 from core.scanner_manager import scanner_manager
 
 # 配置日志记录器
-logger = logging.getLogger("ss0t-scna.gui.web_risk_scan_panel")
+logger = logging.getLogger("nettools.gui.web_risk_scan_panel")
 
 class WebRiskScanPanel(BasePanel):
     """
@@ -49,7 +50,7 @@ class WebRiskScanPanel(BasePanel):
         self.config = {}
         
         # 初始化logger（先于父类初始化）
-        self.logger = logging.getLogger(f"ss0t-scna.gui.{self.MODULE_ID}")
+        self.logger = logging.getLogger(f"nettools.gui.{self.MODULE_ID}")
         self.logger.info("初始化Web风险扫描面板")
         
         # URL列表，用于存储从文件加载的URL
@@ -62,20 +63,23 @@ class WebRiskScanPanel(BasePanel):
         self.disabled_plugins = []
         self.plugin_checkboxes = {}
         
+        # 尝试注册Qt元类型，解决跨线程信号传递问题
+        try:
+            from PyQt5.QtCore import qRegisterMetaType
+            qRegisterMetaType("QVector<int>")
+            self.logger.info("成功注册QVector<int>元类型。")
+        except ImportError:
+            # This specific case handles if qRegisterMetaType cannot be imported
+            self.logger.error("无法从PyQt5.QtCore导入qRegisterMetaType。请检查PyQt5版本和安装。")
+            self.logger.info("WebRiskScanPanel将继续运行，但涉及QVector<int>的跨线程信号可能无法正常工作。")
+        except NameError: # Should not happen if ImportError is caught first for this specific name
+            self.logger.error("qRegisterMetaType函数未定义。这通常是导入失败的后续。")
+        except Exception as e:
+            self.logger.error(f"注册QVector<int>元类型时发生未知错误: {type(e).__name__} - {str(e)}")
+            self.logger.info("将继续使用默认信号槽机制，但某些跨线程信号可能无法正常工作。")
+        
         # 调用父类的__init__，这样会初始化基本的UI组件，也会调用load_config
         super().__init__(parent)
-        
-        # 注册QVector<int>类型，用于Qt信号槽机制
-        try:
-            # 尝试使用qRegisterMetaType
-            from PyQt5.QtCore import qRegisterMetaType
-            try:
-                qRegisterMetaType("QVector<int>")
-            except Exception:
-                pass  # 忽略错误，不会影响主要功能
-        except Exception as e:
-            self.logger.warning(f"注册信号类型失败: {str(e)}")
-            # 继续执行，不影响主要功能
         
         # 移除父类的布局，避免冲突
         if self.layout():
@@ -107,6 +111,11 @@ class WebRiskScanPanel(BasePanel):
         except Exception as e:
             self.logger.error(f"加载配置失败: {str(e)}")
             
+        # 初始化线程和定时器相关变量
+        self.stop_check_timer = QTimer(self)
+        self.stop_elapsed_time = 0
+        self._thread_termination_timeout = 3.0  # 线程终止超时时间(秒)
+        
     def init_plugin_info(self):
         """初始化插件信息，但不在UI中显示插件选项"""
         # 发现可用插件
@@ -190,7 +199,7 @@ class WebRiskScanPanel(BasePanel):
         self.port_input = QLineEdit("80,443")
         basic_form_layout.addRow("端口:", self.port_input)
         
-        params_layout.addWidget(basic_params_group, 1)
+        params_layout.addWidget(basic_params_group, 2)
         
         # === 扫描参数组 ===
         scan_params_group = QGroupBox("扫描参数")
@@ -257,24 +266,25 @@ class WebRiskScanPanel(BasePanel):
         options_layout.addStretch()
         scan_params_layout.addRow("", options_widget)
         
-        params_layout.addWidget(scan_params_group, 1)
+        params_layout.addWidget(scan_params_group, 2)
         
         # === 右侧选项 ===
         options_group = QGroupBox("插件选项")
         options_layout = QVBoxLayout(options_group)
+        options_layout.setContentsMargins(10, 15, 10, 15)
         
-        # 插件管理按钮
-        plugin_management_layout = QHBoxLayout()
+        # 插件管理按钮放在上方
+        buttons_layout = QHBoxLayout()
         
         # 恢复插件管理按钮
         self.manage_plugins_button = QPushButton("管理扫描插件")
-        plugin_management_layout.addWidget(self.manage_plugins_button)
+        buttons_layout.addWidget(self.manage_plugins_button)
         
         # 恢复插件配置按钮
         self.config_plugins_button = QPushButton("配置插件参数")
-        plugin_management_layout.addWidget(self.config_plugins_button)
+        buttons_layout.addWidget(self.config_plugins_button)
         
-        options_layout.addLayout(plugin_management_layout)
+        options_layout.addLayout(buttons_layout)
         
         params_layout.addWidget(options_group, 1)
         
@@ -446,6 +456,77 @@ class WebRiskScanPanel(BasePanel):
                 self.show_error("请输入目标URL或IP")
             return
         
+        # 确保没有正在运行的扫描线程
+        if hasattr(self, 'scan_thread') and self.scan_thread and self.scan_thread.isRunning():
+            self.stop_scan()
+            # 等待一小段时间确保线程真正停止
+            QTimer.singleShot(500, lambda: self._start_scan_after_delay(params))
+            return
+            
+        # 在全新扫描前，显式地清理Python解释器中的futures
+        try:
+            import concurrent.futures
+            import gc
+            import sys
+            
+            # 检查是否处于关闭阶段
+            is_shutdown = False
+            try:
+                # 尝试加载线程模块，如果已处于关闭阶段会抛出异常
+                import concurrent.futures.thread
+            except RuntimeError as e:
+                if "can't register atexit after shutdown" in str(e):
+                    is_shutdown = True
+            
+            # 如果已处于关闭阶段，需要提醒用户重启应用
+            if is_shutdown:
+                reply = QMessageBox.question(
+                    self,
+                    "应用程序状态异常",
+                    "应用程序处于异常状态，无法启动新的扫描。\n\n"
+                    "这通常是由于之前的扫描未正常终止导致的。\n\n"
+                    "请重启应用程序后再试。\n\n"
+                    "是否立即重启应用程序？",
+                    QMessageBox.Yes | QMessageBox.No,
+                    QMessageBox.Yes
+                )
+                
+                if reply == QMessageBox.Yes:
+                    # 重启应用程序
+                    import os
+                    import sys
+                    python = sys.executable
+                    os.execl(python, python, *sys.argv)
+                    return
+                else:
+                    self.reset_ui_after_stop("请重启应用程序后再试")
+                    return
+                    
+            # 强制垃圾回收，释放未关闭的资源
+            gc.collect()
+            
+            # 强制清理concurrent.futures模块的状态
+            for obj in gc.get_objects():
+                if isinstance(obj, concurrent.futures.ThreadPoolExecutor):
+                    try:
+                        if not obj._shutdown:
+                            obj.shutdown(wait=False)
+                    except Exception as e:
+                        self.logger.warning(f"清理线程池时出错: {str(e)}")
+        except Exception as e:
+            self.logger.warning(f"清理线程资源时出错: {str(e)}")
+        
+        self._start_scan_after_delay(params)
+    
+    def _start_scan_after_delay(self, params):
+        """在确保旧线程停止后启动新扫描"""
+        # 禁用所有控制按钮，避免多次点击
+        self.start_button.setEnabled(False)
+        self.stop_button.setEnabled(True)
+        self.report_button.setEnabled(False)
+        self.manage_plugins_button.setEnabled(False)
+        self.config_plugins_button.setEnabled(False)
+        
         # 创建并启动扫描线程
         self.scan_thread = self.create_scan_thread("webriskscanner", params)
         
@@ -453,6 +534,7 @@ class WebRiskScanPanel(BasePanel):
         if hasattr(self.scan_thread.scanner, 'set_result_callback'):
             self.scan_thread.scanner.set_result_callback(self.on_result_received)
         
+        # 启动线程
         self.start_scan_thread()
     
     def on_result_received(self, result):
@@ -702,6 +784,14 @@ class WebRiskScanPanel(BasePanel):
         scan_thread.scan_progress.connect(self.on_scan_progress)
         scan_thread.scan_error.connect(self.on_scan_error)
         
+        # 确保扫描器的进度回调函数连接到线程的update_progress方法
+        # 而不是直接连接到面板的on_scan_progress方法
+        if hasattr(scanner, 'set_progress_callback'):
+            scanner.set_progress_callback(scan_thread.update_progress)
+        
+        # 记录扫描开始时间，用于判断是否超时
+        scan_thread._start_time = time.time()
+        
         self.last_scan_result = None
         return scan_thread
         
@@ -766,8 +856,17 @@ class WebRiskScanPanel(BasePanel):
             percent: 进度百分比
             message: 进度消息
         """
-        self.progress_bar.setValue(percent)
-        self.status_label.setText(message)
+        try:
+            # 更新UI
+            self.progress_bar.setValue(percent)
+            self.status_label.setText(message)
+            
+            # 确保UI响应
+            QApplication.processEvents()
+        except Exception as e:
+            # 进度更新失败不应该导致整个程序崩溃
+            self.logger.error(f"进度更新失败: {str(e)}")
+            # 不再传递异常
     
     def on_scan_error(self, error_msg):
         """
@@ -789,74 +888,139 @@ class WebRiskScanPanel(BasePanel):
     
     def stop_scan(self):
         """停止扫描"""
-        if self.scan_thread and self.scan_thread.isRunning():
-            # 停止扫描器
-            self.scan_thread.scanner.stop()
+        if not self.scan_thread or not self.scan_thread.isRunning():
+            # 如果线程不存在或已经停止，直接重置UI
+            self.reset_ui_after_stop()
+            return
             
-            # 更新UI状态先行，避免用户感觉界面卡顿
-            self.start_button.setEnabled(True)
-            self.stop_button.setEnabled(False)
+        try:
+            # 更新UI状态
             self.status_label.setText("正在停止扫描...")
-            self.progress_bar.setValue(0)
+            self.stop_button.setEnabled(False)
             
-            # 使用定时器非阻塞检查线程状态
-            self.check_thread_timer = QTimer()
-            self.check_thread_timer.setSingleShot(True)
-            self.check_thread_timer.timeout.connect(self.check_thread_stopped)
-            self.check_thread_timer.start(100)  # 100毫秒后检查
+            # 立即禁用界面避免重复点击
+            QApplication.processEvents()
             
-            self.logger.info("正在停止扫描...")
+            # 记录停止请求时间
+            self._stop_requested_time = time.time()
+            
+            # 尝试通知扫描器停止
+            if hasattr(self.scan_thread.scanner, 'stop'):
+                self.scan_thread.scanner.stop()
+                self.logger.info("已向扫描器发送停止信号")
+                
+            # 开始定时检查线程状态
+            self.stop_elapsed_time = 0
+            if hasattr(self, 'stop_check_timer') and self.stop_check_timer:
+                # 确保之前的定时器已停止
+                if self.stop_check_timer.isActive():
+                    self.stop_check_timer.stop()
+                    
+            # 创建新的定时器
+            self.stop_check_timer = QTimer(self)
+            self.stop_check_timer.setInterval(100)  # 每100毫秒检查一次
+            self.stop_check_timer.timeout.connect(self.check_thread_stopped)
+            self.stop_check_timer.start()
+            
+            self.logger.info("已启动线程停止监控")
+            
+        except Exception as e:
+            self.logger.error(f"停止扫描时出错: {str(e)}")
+            # 即使出错也尝试重置UI
+            self.reset_ui_after_stop("扫描停止时出错")
+            # 强制终止线程
+            self.force_terminate_thread()
     
     def check_thread_stopped(self):
-        """检查线程是否已停止，并处理超时情况"""
-        if self.scan_thread and self.scan_thread.isRunning():
-            # 线程仍在运行，再次启动定时器
-            elapsed_time = getattr(self, 'stop_elapsed_time', 0) + 100
-            self.stop_elapsed_time = elapsed_time
+        """检查线程是否已停止，由定时器调用"""
+        try:
+            if not self.scan_thread or not self.scan_thread.isRunning():
+                # 线程已经停止
+                self.stop_check_timer.stop()
+                self.reset_ui_after_stop(message="扫描已停止")
+                self.logger.info("扫描线程已正常停止")
+                return
             
-            if elapsed_time > 5000:  # 超过5秒
-                # 强制终止线程
-                self.logger.warning("扫描线程未能在预期时间内停止，尝试强制终止")
-                # 先再次尝试停止扫描器
-                if hasattr(self.scan_thread, 'scanner') and hasattr(self.scan_thread.scanner, 'stop'):
-                    self.scan_thread.scanner.stop()
-                # 终止线程
-                self.scan_thread.terminate()
-                self.scan_thread.wait(500)  # 再等待500毫秒
-                self.status_label.setText("扫描已强制停止")
-                self.stop_elapsed_time = 0
-                self.logger.info("扫描已停止")
-            else:
-                # 更新UI提示并继续等待
-                self.status_label.setText(f"正在停止扫描...({elapsed_time/1000:.1f}秒)")
-                self.check_thread_timer.start(100)  # 再等待100毫秒
-        else:
-            # 线程已停止
-            self.status_label.setText("扫描已停止")
-            self.stop_elapsed_time = 0
-            self.logger.info("扫描已停止")
+            # 增加计时
+            self.stop_elapsed_time += 0.1
+            
+            # 超过1秒更新界面状态，表明仍在等待
+            if int(self.stop_elapsed_time * 10) % 10 == 0:
+                self.status_label.setText(f"正在停止扫描...({self.stop_elapsed_time:.1f}秒)")
+                QApplication.processEvents()
+            
+            # 如果超时(2秒)，强制终止线程
+            if self.stop_elapsed_time >= 2.0:
+                self.stop_check_timer.stop()
+                self.logger.warning("扫描线程未能在预期时间内停止，强制终止")
+                self.force_terminate_thread()
+                self.reset_ui_after_stop(message="扫描已强制停止")
+        except Exception as e:
+            self.logger.error(f"检查线程状态时出错: {str(e)}")
+            self.stop_check_timer.stop()
+            self.force_terminate_thread()
+            self.reset_ui_after_stop(message="停止过程出错")
     
-    def closeEvent(self, event):
-        """
-        窗口关闭时的事件处理
-        
-        Args:
-            event: 关闭事件
-        """
-        # 停止任何正在运行的扫描
-        if self.scan_thread and self.scan_thread.isRunning():
-            self.logger.info("面板关闭时停止正在运行的扫描")
-            self.scan_thread.scanner.stop()
-            self.scan_thread.wait(1000)  # 等待最多1秒
+    def force_terminate_thread(self):
+        """强制终止扫描线程"""
+        self.logger.warning("尝试强制终止扫描线程...")
+        try:
+            if self.scan_thread and self.scan_thread.isRunning():
+                # 1. 通知扫描器和插件停止（它们应该检查自己的_stopped标志）
+                if hasattr(self.scan_thread.scanner, 'stop'):
+                    try:
+                        self.logger.info("向扫描器发送停止信号以尝试优雅退出...")
+                        self.scan_thread.scanner.stop() # 这会设置扫描器及其插件的_stopped标志
+                    except Exception as e:
+                        self.logger.error(f"调用扫描器stop()方法时出错: {str(e)}")
+                
+                # 2. 断开信号连接，避免处理已无效的信号
+                try:
+                    self.scan_thread.scan_complete.disconnect()
+                    self.scan_thread.scan_progress.disconnect()
+                    self.scan_thread.scan_error.disconnect()
+                    self.logger.info("已断开扫描线程的信号连接。")
+                except TypeError: # 通常是信号未连接时disconnect()抛出的错误
+                    self.logger.info("部分或全部扫描线程信号未连接或已断开。")
+                except Exception as e:
+                    self.logger.error(f"断开信号连接时发生未知错误: {str(e)}")
+                
+                # 3. 不再使用QThread.terminate()，因为它不安全
+                # self.logger.info("QThread.terminate() 已被移除以提高稳定性。依赖扫描器自行停止。")
+
+                # 4. 清理扫描线程对象引用，以便垃圾回收
+                # 注意：此时线程可能仍在后台运行，直到其任务完成或检查到停止标志
+                # self.scan_thread = None 
+                # gc.collect() # 一般不建议显式调用gc.collect()
+
+            # 停止定时器（如果存在且活动）
+            if hasattr(self, 'stop_check_timer') and self.stop_check_timer and self.stop_check_timer.isActive():
+                self.stop_check_timer.stop()
+                self.logger.info("已停止线程状态检查定时器。")
             
-            # 如果线程仍在运行，则终止它
-            if self.scan_thread.isRunning():
-                self.logger.warning("强制终止扫描线程")
-                self.scan_thread.terminate()
-                self.scan_thread.wait()
+            self.logger.info("强制终止流程已执行（移除了terminate调用）。等待线程自行结束或超时。")
+            # UI重置现在主要由 check_thread_stopped 中的超时逻辑处理，或者在扫描正常完成后处理
+
+        except Exception as e:
+            self.logger.error(f"强制终止线程过程中发生严重错误: {str(e)}", exc_info=True)
+            # 即使出错也尝试重置UI
+            self.reset_ui_after_stop("扫描强制停止时出错")
+    
+    def reset_ui_after_stop(self, message="扫描已停止"):
+        """重置UI状态"""
+        # 重新启用所有控制按钮
+        self.start_button.setEnabled(True)
+        self.stop_button.setEnabled(False)
+        self.manage_plugins_button.setEnabled(True)
+        self.config_plugins_button.setEnabled(True)
         
-        # 调用父类方法
-        QWidget.closeEvent(self, event)
+        # 根据是否有结果启用报告按钮
+        self.report_button.setEnabled(self.last_scan_result is not None and 
+                                     len(self.last_scan_result.data) > 0)
+        
+        # 重置进度条和状态
+        self.progress_bar.setValue(0)
+        self.status_label.setText(message)
 
     def create_overview_table(self):
         """设置总览表格"""
@@ -1479,7 +1643,7 @@ class WebRiskScanPanel(BasePanel):
         self.port_input = QLineEdit("80,443")
         basic_form_layout.addRow("端口:", self.port_input)
         
-        params_layout.addWidget(basic_params_group, 1)
+        params_layout.addWidget(basic_params_group, 2)
         
         # === 扫描参数组 ===
         scan_params_group = QGroupBox("扫描参数")
@@ -1494,7 +1658,7 @@ class WebRiskScanPanel(BasePanel):
         thread_layout = QHBoxLayout()
         thread_layout.addWidget(QLabel("线程数:"))
         self.thread_input = QSpinBox()
-        self.thread_input.setRange(1, 200)
+        self.thread_input.setRange(1, 400)
         self.thread_input.setValue(10)
         thread_layout.addWidget(self.thread_input)
         thread_timeout_layout.addLayout(thread_layout)
@@ -1546,24 +1710,25 @@ class WebRiskScanPanel(BasePanel):
         options_layout.addStretch()
         scan_params_layout.addRow("", options_widget)
         
-        params_layout.addWidget(scan_params_group, 1)
+        params_layout.addWidget(scan_params_group, 2)
         
         # === 右侧选项 ===
         options_group = QGroupBox("插件选项")
         options_layout = QVBoxLayout(options_group)
+        options_layout.setContentsMargins(10, 15, 10, 15)
         
-        # 插件管理按钮
-        plugin_management_layout = QHBoxLayout()
+        # 插件管理按钮放在上方
+        buttons_layout = QHBoxLayout()
         
         # 恢复插件管理按钮
         self.manage_plugins_button = QPushButton("管理扫描插件")
-        plugin_management_layout.addWidget(self.manage_plugins_button)
+        buttons_layout.addWidget(self.manage_plugins_button)
         
         # 恢复插件配置按钮
         self.config_plugins_button = QPushButton("配置插件参数")
-        plugin_management_layout.addWidget(self.config_plugins_button)
+        buttons_layout.addWidget(self.config_plugins_button)
         
-        options_layout.addLayout(plugin_management_layout)
+        options_layout.addLayout(buttons_layout)
         
         params_layout.addWidget(options_group, 1)
         
@@ -1754,3 +1919,37 @@ class WebRiskScanPanel(BasePanel):
         self.logger.info(f"扫描配置: 目标={params['targets']}, 端口={params['ports']}, 线程数={params['threads']}, 扫描深度={params['scan_depth']}")
         
         return params
+
+    def closeEvent(self, event):
+        """
+        窗口关闭时的事件处理
+        
+        Args:
+            event: 关闭事件
+        """
+        # 停止任何正在运行的扫描
+        if self.scan_thread and self.scan_thread.isRunning():
+            self.logger.info("面板关闭时停止正在运行的扫描")
+            
+            # 强制断开所有信号连接
+            try:
+                self.scan_thread.scan_complete.disconnect()
+                self.scan_thread.scan_progress.disconnect()
+                self.scan_thread.scan_error.disconnect()
+            except Exception:
+                pass
+            
+            # 通知扫描器停止
+            if hasattr(self.scan_thread.scanner, 'stop'):
+                self.scan_thread.scanner.stop()
+            
+            # 立即终止线程，不再等待
+            self.scan_thread.terminate()
+            self.scan_thread.wait(500)  # 等待最多0.5秒
+            
+            # 如果线程仍在运行，记录警告但不再阻塞关闭
+            if self.scan_thread.isRunning():
+                self.logger.warning("关闭面板时无法完全终止扫描线程")
+        
+        # 调用父类方法
+        QWidget.closeEvent(self, event)

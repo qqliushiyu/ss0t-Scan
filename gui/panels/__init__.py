@@ -14,6 +14,9 @@ from gui.panels.dns_panel import DnsPanel
 from gui.panels.traceroute_panel import TraceroutePanel
 from gui.panels.ping_monitor_panel import PingMonitorPanel
 from gui.panels.web_dir_scan_panel import WebDirScanPanel
+from gui.panels.poc_scan_panel import POCManagerDialog
+from gui.panels.bruteforce_panel import BruteforcePanel
+from gui.panels.report_manager_panel import ReportManagerPanel
 
 # 所有面板类列表
 __all__ = [
@@ -23,5 +26,8 @@ __all__ = [
     'DnsPanel',
     'TraceroutePanel',
     'PingMonitorPanel',
-    'WebDirScanPanel'
+    'WebDirScanPanel',
+    'POCManagerDialog',
+    'BruteforcePanel',
+    'ReportManagerPanel'
 ] 

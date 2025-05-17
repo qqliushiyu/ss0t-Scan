@@ -1,0 +1,17 @@
+{
+    "enabled": true,
+    "name": "Web指纹识别",
+    "description": "检测网站使用的Web服务器、框架、CMS等技术栈",
+    "version": "1.0.0",
+    "timeout": 10,
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.131 Safari/537.36",
+    "verify_ssl": false,
+    "custom_fingerprints": {
+        "Custom CMS": [
+            {
+                "path": "/custom-path",
+                "pattern": "CustomPattern"
+            }
+        ]
+    }
+}

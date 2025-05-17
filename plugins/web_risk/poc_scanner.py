@@ -24,7 +24,7 @@ class POCScanner(WebRiskPlugin):
     NAME = "POC漏洞扫描"
     DESCRIPTION = "基于POC的漏洞验证框架，支持加载自定义POC进行批量扫描"
     VERSION = "1.0.0"
-    AUTHOR = "ss0t-scna"
+    AUTHOR = "NetTools"
     CATEGORY = "漏洞检测"
     
     # POC文件默认目录

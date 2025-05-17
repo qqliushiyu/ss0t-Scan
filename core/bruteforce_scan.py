@@ -14,6 +14,7 @@ import threading
 from typing import Dict, List, Any, Optional, Union, Tuple, Callable
 from concurrent.futures import ThreadPoolExecutor
 import importlib.util
+import concurrent.futures
 
 from core.base_scanner import BaseScanner, ScanResult
 
@@ -48,16 +49,6 @@ try:
 except ImportError:
     telnetlib = None
 
-try:
-    import psycopg2  # PostgreSQL
-except ImportError:
-    psycopg2 = None
-
-try:
-    from smb.SMBConnection import SMBConnection  # SMB
-except ImportError:
-    SMBConnection = None
-
 
 class BruteforceScanner(BaseScanner):
     """爆破扫描器，用于对多种服务进行密码爆破"""
@@ -72,10 +63,6 @@ class BruteforceScanner(BaseScanner):
         {"id": "mongodb", "name": "MongoDB", "default_port": 27017, "available": pymongo is not None},
         {"id": "redis", "name": "Redis", "default_port": 6379, "available": redis is not None},
         {"id": "telnet", "name": "Telnet", "default_port": 23, "available": telnetlib is not None},
-        {"id": "postgres", "name": "PostgreSQL", "default_port": 5432, "available": psycopg2 is not None},
-        {"id": "smb", "name": "SMB", "default_port": 445, "available": SMBConnection is not None},
-        {"id": "http-basic", "name": "HTTP基本认证", "default_port": 80, "available": True},
-        {"id": "http-form", "name": "HTTP表单认证", "default_port": 80, "available": True},
     ]
     
     def __init__(self, config: Dict[str, Any] = None):
@@ -88,6 +75,9 @@ class BruteforceScanner(BaseScanner):
         super().__init__(config)
         self.logger = logging.getLogger("scanner.bruteforce_scan")
         
+        # 扫描模式
+        self.mode = self.config.get('mode', 'single')
+        
         # 爆破扫描配置
         self.targets = self.config.get('targets', [])
         self.service_type = self.config.get('service_type', 'ssh')
@@ -99,15 +89,10 @@ class BruteforceScanner(BaseScanner):
         self.threads = min(int(self.config.get('threads', 10)), 50)  # 限制最大线程数
         self.timeout = int(self.config.get('timeout', 3))
         self.stop_on_success = bool(self.config.get('stop_on_success', True))
-        self.delay = float(self.config.get('delay', 0.1))  # 请求间延迟，防止触发防护
         
-        # HTTP表单爆破的额外配置
-        self.form_url = self.config.get('form_url', '')
-        self.form_user_field = self.config.get('form_user_field', 'username')
-        self.form_pass_field = self.config.get('form_pass_field', 'password')
-        self.form_method = self.config.get('form_method', 'POST')
-        self.form_success_match = self.config.get('form_success_match', '')
-        self.form_failure_match = self.config.get('form_failure_match', '')
+        # 网段扫描特定配置
+        self.service_detection = bool(self.config.get('service_detection', True))
+        self.only_brute_open = bool(self.config.get('only_brute_open', True))
         
         # 扫描控制
         self.scan_started = False
@@ -150,10 +135,6 @@ class BruteforceScanner(BaseScanner):
         
         if not self.password_list and not self.password_file:
             return False, "未提供密码列表"
-        
-        # 对HTTP表单认证的特殊检查
-        if self.service_type == 'http-form' and not self.form_url:
-            return False, "使用HTTP表单认证时必须提供表单URL"
         
         # 检查线程数
         if self.threads <= 0:
@@ -229,9 +210,26 @@ class BruteforceScanner(BaseScanner):
                     data=[],
                     error_msg="没有有效的密码"
                 )
+
+            # 检测目标是否有开放服务（网段扫描模式下）
+            if self.mode == "network" and self.service_detection:
+                self.update_progress(10, f"正在检测 {len(targets)} 个目标的服务开放状态...")
+                targets = self._detect_open_services(targets)
+                if not targets:
+                    return ScanResult(
+                        success=True,
+                        data=[{
+                            "check_type": "summary",
+                            "message": "没有找到开放的服务",
+                            "details": "扫描完成，未发现任何开放的服务。"
+                        }],
+                        error_msg=None
+                    )
+                
+                self.update_progress(30, f"发现 {len(targets)} 个目标的服务开放，开始爆破...")
             
             self.logger.info(f"开始爆破扫描，共 {len(targets)} 个目标，{len(usernames)} 个用户名，{len(passwords)} 个密码")
-            self.update_progress(10, f"开始爆破，共 {len(targets)} 个目标，{len(usernames)} 个用户名，{len(passwords)} 个密码...")
+            self.update_progress(40, f"开始爆破，共 {len(targets)} 个目标，{len(usernames)} 个用户名，{len(passwords)} 个密码...")
             
             # 使用线程池并发扫描
             with ThreadPoolExecutor(max_workers=self.threads) as executor:
@@ -277,55 +275,48 @@ class BruteforceScanner(BaseScanner):
                                 )
                             )
                 
-                # 处理扫描结果
-                for future in futures:
+                # 等待所有任务完成
+                for i, future in enumerate(concurrent.futures.as_completed(futures)):
                     if self.scan_stopped:
                         break
                     
-                    try:
-                        completed_tasks += 1
-                        progress = int(10 + (85 * completed_tasks / total_tasks))
-                        self.update_progress(
-                            progress, 
-                            f"已完成 {completed_tasks}/{total_tasks} 组凭据测试"
-                        )
-                        
-                        _ = future.result()
-                    except Exception as e:
-                        self.logger.error(f"凭据测试出错: {str(e)}")
+                    completed_tasks += 1
+                    progress = int(40 + (completed_tasks / total_tasks) * 60)
+                    
+                    self.update_progress(min(progress, 99), f"已完成 {completed_tasks}/{total_tasks} 个凭据组合")
             
-            # 更新所有目标的结束时间和状态
+            # 整理最终结果
             for result in self.results:
-                if result["status"] == "in_progress":
-                    result["status"] = "completed"
                 result["end_time"] = time.time()
+                
+                if not result["credentials"]:
+                    result["status"] = "failed"
+                else:
+                    result["status"] = "success"
             
-            # 总结结果
-            success_count = len([r for r in self.results if r["credentials"]])
+            # 统计成功数
+            success_count = sum(1 for r in self.results if r["status"] == "success")
+            total_count = len(self.results)
             
-            self.logger.info(f"爆破扫描完成，共发现 {success_count} 个目标的有效凭据")
-            self.update_progress(100, f"爆破扫描完成，发现 {success_count} 个有效凭据")
+            self.update_progress(100, f"爆破完成，成功 {success_count}/{total_count} 个目标")
             
             return ScanResult(
                 success=True,
                 data=self.results,
-                metadata={
-                    "scan_type": "bruteforce_scan",
-                    "service_type": self.service_type,
-                    "targets_count": len(targets),
-                    "success_count": success_count
-                }
+                error_msg=None
             )
         
         except Exception as e:
-            self.logger.error(f"执行爆破扫描时出错: {str(e)}", exc_info=True)
+            error_msg = f"爆破扫描出错: {str(e)}"
+            self.logger.error(error_msg)
+            import traceback
+            self.logger.debug(traceback.format_exc())
+            
             return ScanResult(
                 success=False,
-                data=self.results,
-                error_msg=f"爆破扫描出错: {str(e)}"
+                data=self.results if self.results else [],
+                error_msg=error_msg
             )
-        finally:
-            self.scan_started = False
     
     def _try_credential(self, 
                        target: str, 
@@ -333,23 +324,22 @@ class BruteforceScanner(BaseScanner):
                        password: str, 
                        target_result: Dict[str, Any]) -> bool:
         """
-        尝试一组凭据
+        尝试单个凭据
         
         Args:
             target: 目标主机
             username: 用户名
             password: 密码
-            target_result: 目标结果字典
-            
+            target_result: 目标结果字典的引用
+        
         Returns:
             是否成功
         """
-        # 如果已经成功爆破且配置为成功后停止，则跳过
-        if self.stop_on_success and target_result.get("credentials"):
+        if self.scan_stopped or (self.stop_on_success and target_result["credentials"]):
             return False
         
         try:
-            # 根据服务类型调用对应的爆破方法
+            # 根据服务类型调用不同的爆破方法
             success = False
             
             if self.service_type == "ssh":
@@ -364,45 +354,34 @@ class BruteforceScanner(BaseScanner):
                 success = self._try_redis(target, username, password)
             elif self.service_type == "telnet":
                 success = self._try_telnet(target, username, password)
-            elif self.service_type == "postgres":
-                success = self._try_postgres(target, username, password)
-            elif self.service_type == "smb":
-                success = self._try_smb(target, username, password)
-            elif self.service_type == "http-basic":
-                success = self._try_http_basic(target, username, password)
-            elif self.service_type == "http-form":
-                success = self._try_http_form(target, username, password)
             
-            # 如果凭据有效，记录到结果中
+            # 如果成功，更新结果
             if success:
-                self.logger.info(f"发现有效凭据 - {target}:{self.port} - {username}:{password}")
-                
                 with self._lock:
                     target_result["credentials"].append({
                         "username": username,
                         "password": password,
-                        "time": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+                        "time": time.time()
                     })
-            
-            # 添加延迟，防止触发防护
-            if self.delay > 0:
-                time.sleep(self.delay)
+                    
+                    # 记录日志
+                    self.logger.info(f"找到凭据 - 目标: {target}, 服务: {self.service_type}, 用户名: {username}, 密码: {password}")
             
             return success
-            
+        
         except Exception as e:
-            self.logger.debug(f"尝试凭据 {username}:{password} 时出错: {str(e)}")
+            self.logger.debug(f"尝试凭据失败 - 目标: {target}, 用户名: {username}, 错误: {str(e)}")
             return False
     
     def _try_ssh(self, host: str, username: str, password: str) -> bool:
-        """尝试SSH登录"""
+        """尝试SSH连接"""
         if not paramiko:
             return False
         
-        client = None
+        client = paramiko.SSHClient()
+        client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        
         try:
-            client = paramiko.SSHClient()
-            client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             client.connect(
                 hostname=host,
                 port=self.port,
@@ -412,56 +391,35 @@ class BruteforceScanner(BaseScanner):
                 allow_agent=False,
                 look_for_keys=False
             )
-            
-            # 验证连接是否正常工作
-            _, stdout, _ = client.exec_command("echo success", timeout=self.timeout)
-            output = stdout.read().decode('utf-8').strip()
-            
-            return output == "success"
+            return True
         except (paramiko.AuthenticationException, paramiko.SSHException):
-            # 认证失败，不是有效凭据
             return False
-        except Exception as e:
-            self.logger.debug(f"SSH连接错误 {host}:{self.port} - {str(e)}")
+        except Exception:
             return False
         finally:
-            if client:
-                client.close()
+            client.close()
     
     def _try_ftp(self, host: str, username: str, password: str) -> bool:
-        """尝试FTP登录"""
+        """尝试FTP连接"""
         if not ftplib:
             return False
         
-        client = None
         try:
-            client = ftplib.FTP()
-            client.connect(host, self.port, timeout=self.timeout)
-            client.login(username, password)
-            
-            # 验证连接是否能正常工作
-            client.pwd()  # 获取当前目录
-            
+            ftp = ftplib.FTP()
+            ftp.connect(host, self.port, self.timeout)
+            ftp.login(username, password)
+            ftp.quit()
             return True
-        except (ftplib.error_perm, ConnectionRefusedError):
-            # 认证失败，不是有效凭据
+        except ftplib.error_perm:
             return False
-        except Exception as e:
-            self.logger.debug(f"FTP连接错误 {host}:{self.port} - {str(e)}")
+        except Exception:
             return False
-        finally:
-            if client:
-                try:
-                    client.quit()
-                except:
-                    pass
     
     def _try_mysql(self, host: str, username: str, password: str) -> bool:
-        """尝试MySQL登录"""
+        """尝试MySQL连接"""
         if not pymysql:
             return False
         
-        conn = None
         try:
             conn = pymysql.connect(
                 host=host,
@@ -470,264 +428,131 @@ class BruteforceScanner(BaseScanner):
                 password=password,
                 connect_timeout=self.timeout
             )
-            
-            # 验证连接是否能正常工作
-            cursor = conn.cursor()
-            cursor.execute("SELECT 1")
-            cursor.close()
-            
+            conn.close()
             return True
         except pymysql.Error:
-            # 认证失败，不是有效凭据
             return False
-        except Exception as e:
-            self.logger.debug(f"MySQL连接错误 {host}:{self.port} - {str(e)}")
+        except Exception:
             return False
-        finally:
-            if conn:
-                conn.close()
     
     def _try_mongodb(self, host: str, username: str, password: str) -> bool:
-        """尝试MongoDB登录"""
+        """尝试MongoDB连接"""
         if not pymongo:
             return False
         
-        client = None
         try:
-            # 构建MongoDB连接URI
-            if username and password:
-                uri = f"mongodb://{username}:{password}@{host}:{self.port}/?authSource=admin"
-            else:
-                uri = f"mongodb://{host}:{self.port}/"
-            
-            client = pymongo.MongoClient(
-                uri,
-                serverSelectionTimeoutMS=self.timeout * 1000
-            )
-            
-            # 验证连接是否正常工作
-            client.admin.command('ismaster')
-            
+            uri = f"mongodb://{username}:{password}@{host}:{self.port}/?authSource=admin&connectTimeoutMS={self.timeout * 1000}"
+            client = pymongo.MongoClient(uri, serverSelectionTimeoutMS=self.timeout * 1000)
+            client.server_info()  # 如果验证失败会抛出异常
+            client.close()
             return True
-        except pymongo.errors.OperationFailure:
-            # 认证失败，不是有效凭据
+        except pymongo.errors.PyMongoError:
             return False
-        except Exception as e:
-            self.logger.debug(f"MongoDB连接错误 {host}:{self.port} - {str(e)}")
+        except Exception:
             return False
-        finally:
-            if client:
-                client.close()
     
     def _try_redis(self, host: str, username: str, password: str) -> bool:
-        """尝试Redis登录"""
+        """尝试Redis连接"""
         if not redis:
             return False
         
-        client = None
         try:
-            client = redis.Redis(
+            r = redis.Redis(
                 host=host,
                 port=self.port,
+                username=username if username else None,  # Redis 6.0+ 支持用户名
                 password=password,
                 socket_timeout=self.timeout,
                 socket_connect_timeout=self.timeout
             )
-            
-            # 验证连接是否正常工作
-            pong = client.ping()
-            
-            return pong
-        except redis.exceptions.AuthenticationError:
-            # 认证失败，不是有效凭据
+            r.ping()
+            r.close()
+            return True
+        except redis.RedisError:
             return False
-        except Exception as e:
-            self.logger.debug(f"Redis连接错误 {host}:{self.port} - {str(e)}")
+        except Exception:
             return False
-        finally:
-            if client:
-                client.close()
     
     def _try_telnet(self, host: str, username: str, password: str) -> bool:
-        """尝试Telnet登录"""
+        """尝试Telnet连接"""
         if not telnetlib:
             return False
         
-        tn = None
         try:
-            tn = telnetlib.Telnet(host, self.port, timeout=self.timeout)
+            tn = telnetlib.Telnet(host, self.port, self.timeout)
             
             # 等待登录提示
-            tn.read_until(b"login: ", timeout=self.timeout)
+            tn.read_until(b"login: ", self.timeout)
             tn.write(username.encode('ascii') + b"\n")
             
             # 等待密码提示
-            tn.read_until(b"Password: ", timeout=self.timeout)
+            tn.read_until(b"Password: ", self.timeout)
             tn.write(password.encode('ascii') + b"\n")
             
-            # 读取结果
-            result = tn.read_some()
+            # 检查是否登录成功
+            response = tn.read_some()
+            tn.close()
             
-            # 检查是否登录成功（没有出现登录失败提示）
-            if b"incorrect" not in result.lower() and b"failed" not in result.lower():
-                return True
-            
-            return False
-        except Exception as e:
-            self.logger.debug(f"Telnet连接错误 {host}:{self.port} - {str(e)}")
-            return False
-        finally:
-            if tn:
-                tn.close()
-    
-    def _try_postgres(self, host: str, username: str, password: str) -> bool:
-        """尝试PostgreSQL登录"""
-        if not psycopg2:
-            return False
-        
-        conn = None
-        try:
-            conn = psycopg2.connect(
-                host=host,
-                port=self.port,
-                user=username,
-                password=password,
-                dbname="postgres",  # 尝试连接默认数据库
-                connect_timeout=self.timeout
-            )
-            
-            # 验证连接是否正常工作
-            cursor = conn.cursor()
-            cursor.execute("SELECT 1")
-            cursor.close()
-            
-            return True
-        except psycopg2.OperationalError:
-            # 认证失败，不是有效凭据
-            return False
-        except Exception as e:
-            self.logger.debug(f"PostgreSQL连接错误 {host}:{self.port} - {str(e)}")
-            return False
-        finally:
-            if conn:
-                conn.close()
-    
-    def _try_smb(self, host: str, username: str, password: str) -> bool:
-        """尝试SMB登录"""
-        if not SMBConnection:
-            return False
-        
-        conn = None
-        try:
-            # 创建SMB连接
-            conn = SMBConnection(
-                username,
-                password,
-                "ss0t-scna",  # 客户端名称
-                host,  # 服务器名称
-                use_ntlm_v2=True
-            )
-            
-            # 尝试连接
-            connected = conn.connect(host, self.port, timeout=self.timeout)
-            
-            # 如果连接成功，尝试列出共享
-            if connected:
-                shares = conn.listShares()
-                return True
-            
-            return False
-        except Exception as e:
-            self.logger.debug(f"SMB连接错误 {host}:{self.port} - {str(e)}")
-            return False
-        finally:
-            if conn and conn.sock:
-                conn.close()
-    
-    def _try_http_basic(self, host: str, username: str, password: str) -> bool:
-        """尝试HTTP基本认证"""
-        import requests
-        from requests.auth import HTTPBasicAuth
-        
-        try:
-            # 构建完整URL
-            if host.startswith(('http://', 'https://')):
-                url = host
-            else:
-                url = f"http://{host}:{self.port}"
-            
-            # 发送带认证的请求
-            response = requests.get(
-                url,
-                auth=HTTPBasicAuth(username, password),
-                timeout=self.timeout,
-                verify=False  # 忽略SSL证书验证
-            )
-            
-            # 检查响应状态码
-            return response.status_code != 401  # 401表示认证失败
-        except Exception as e:
-            self.logger.debug(f"HTTP基本认证错误 {host}:{self.port} - {str(e)}")
-            return False
-    
-    def _try_http_form(self, host: str, username: str, password: str) -> bool:
-        """尝试HTTP表单认证"""
-        import requests
-        
-        try:
-            # 使用配置中的表单URL，或根据目标构建URL
-            if self.form_url:
-                url = self.form_url
-            elif host.startswith(('http://', 'https://')):
-                url = host
-            else:
-                url = f"http://{host}:{self.port}"
-            
-            # 构建表单数据
-            data = {
-                self.form_user_field: username,
-                self.form_pass_field: password
-            }
-            
-            # 发送表单请求
-            if self.form_method.upper() == "POST":
-                response = requests.post(
-                    url,
-                    data=data,
-                    timeout=self.timeout,
-                    verify=False,  # 忽略SSL证书验证
-                    allow_redirects=True
-                )
-            else:
-                response = requests.get(
-                    url,
-                    params=data,
-                    timeout=self.timeout,
-                    verify=False,  # 忽略SSL证书验证
-                    allow_redirects=True
-                )
-            
-            # 根据配置的成功或失败标记判断结果
-            if self.form_success_match and self.form_success_match in response.text:
-                return True
-            
-            if self.form_failure_match and self.form_failure_match in response.text:
+            # 如果返回内容中包含错误提示，则认为失败
+            if b"incorrect" in response.lower() or b"failed" in response.lower() or b"denied" in response.lower():
                 return False
             
-            # 如果没有配置匹配标记，则根据重定向和状态码判断
-            # 通常登录成功会重定向到其他页面
-            return "/login" not in response.url and response.status_code == 200
-            
-        except Exception as e:
-            self.logger.debug(f"HTTP表单认证错误 {host}:{self.port} - {str(e)}")
+            return True
+        except Exception:
             return False
     
     def stop(self) -> None:
         """停止扫描"""
-        self.logger.info("停止爆破扫描")
-        self.scan_stopped = True
+        if self.scan_started and not self.scan_stopped:
+            self.logger.info("正在停止爆破扫描...")
+            self.scan_stopped = True
+            super().stop()
     
     @classmethod
     def get_supported_services(cls) -> List[Dict[str, Any]]:
         """获取支持的服务列表"""
         return cls.SUPPORTED_SERVICES 
+
+    def _detect_open_services(self, targets: List[str]) -> List[str]:
+        """
+        检测目标列表中有哪些IP的服务是开放的
+        
+        Args:
+            targets: 目标IP列表
+            
+        Returns:
+            开放服务的IP列表
+        """
+        open_targets = []
+        
+        # 导入网络工具
+        from utils.network import is_port_open
+        
+        # 使用线程池加速检测
+        with ThreadPoolExecutor(max_workers=self.threads) as executor:
+            futures = {}
+            
+            for target in targets:
+                futures[executor.submit(is_port_open, target, self.port, self.timeout)] = target
+            
+            # 处理结果
+            total = len(futures)
+            completed = 0
+            
+            for future in concurrent.futures.as_completed(futures):
+                target = futures[future]
+                completed += 1
+                
+                # 更新进度
+                progress = int(10 + (completed / total) * 15)
+                self.update_progress(progress, f"检测服务 {completed}/{total}: {target}:{self.port}")
+                
+                try:
+                    is_open = future.result()
+                    if is_open:
+                        open_targets.append(target)
+                        self.logger.info(f"目标 {target}:{self.port} 服务开放")
+                except Exception as e:
+                    self.logger.warning(f"检测目标 {target}:{self.port} 出错: {str(e)}")
+        
+        return open_targets 

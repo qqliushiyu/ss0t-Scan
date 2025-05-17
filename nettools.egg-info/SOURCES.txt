@@ -1,8 +1,8 @@
 README.md
 setup.py
-ss0t-scna.egg-info/PKG-INFO
-ss0t-scna.egg-info/SOURCES.txt
-ss0t-scna.egg-info/dependency_links.txt
-ss0t-scna.egg-info/entry_points.txt
-ss0t-scna.egg-info/requires.txt
-ss0t-scna.egg-info/top_level.txt
+nettools.egg-info/PKG-INFO
+nettools.egg-info/SOURCES.txt
+nettools.egg-info/dependency_links.txt
+nettools.egg-info/entry_points.txt
+nettools.egg-info/requires.txt
+nettools.egg-info/top_level.txt

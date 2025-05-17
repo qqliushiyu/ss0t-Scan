@@ -2,7 +2,7 @@
     "name": "Log4j远程代码执行漏洞 (Log4Shell)",
     "id": "CVE-2021-44228",
     "description": "Apache Log4j 2.x版本存在严重的远程代码执行漏洞，攻击者可以通过JNDI特性在目标系统触发远程代码执行。",
-    "author": "ss0t-scna",
+    "author": "NetTools",
     "type": "远程代码执行",
     "severity": "critical",
     "references": [

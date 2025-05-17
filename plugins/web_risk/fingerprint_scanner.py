@@ -26,7 +26,7 @@ class FingerprintScanner(WebRiskPlugin):
     NAME = "Web指纹识别"
     DESCRIPTION = "检测网站使用的Web服务器、框架、CMS等技术栈"
     VERSION = "1.0.0"
-    AUTHOR = "ss0t-scna"
+    AUTHOR = "NetTools"
     CATEGORY = "指纹识别"  # 指纹识别类别
     
     # 默认指纹库

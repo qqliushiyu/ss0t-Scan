@@ -34,12 +34,12 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(os.path.join(logs_dir, 'cli.log')),
+        logging.FileHandler(os.path.join(logs_dir, 'cli.log'), encoding='utf-8'),
         logging.StreamHandler()
     ]
 )
 
-logger = logging.getLogger("ss0t-scna.cli")
+logger = logging.getLogger("nettools.cli")
 
 def create_parser() -> argparse.ArgumentParser:
     """
@@ -69,11 +69,16 @@ def create_parser() -> argparse.ArgumentParser:
     scan_parser.add_argument('-v', '--verbose', action='store_true', help='启用详细输出')
     scan_parser.add_argument('-m', '--module', type=str, required=True, 
                            help='扫描模块名称')
-    scan_parser.add_argument('-p', '--params', type=str, help='扫描参数 (JSON 格式)')
-    scan_parser.add_argument('-f', '--params-file', type=str, help='扫描参数文件 (JSON)')
+    scan_parser.add_argument('-t', '--target', type=str, help='扫描目标(IP/域名/URL/IP段)')
+    scan_parser.add_argument('-tf', '--target-file', type=str, help='从文件加载扫描目标(每行一个)')
+    scan_parser.add_argument('-p', '--port', type=str, help='端口范围(如80,443或1-1000)')
+    scan_parser.add_argument('--params', type=str, help='扫描参数 (JSON 格式)')
+    scan_parser.add_argument('--params-file', type=str, help='扫描参数文件 (JSON)')
     scan_parser.add_argument('-o', '--output', type=str, help='输出文件路径')
-    scan_parser.add_argument('-t', '--output-type', type=str, default='csv', 
+    scan_parser.add_argument('--output-type', type=str, default='csv', 
                            choices=['csv', 'json', 'xlsx'], help='输出文件类型')
+    scan_parser.add_argument('--threads', type=int, help='线程数')
+    scan_parser.add_argument('--timeout', type=int, help='超时时间(秒)')
     
     # config 命令 - 配置管理
     config_parser = subparsers.add_parser('config', help='配置管理')
@@ -112,7 +117,25 @@ def list_modules() -> None:
         print()
     
     print("=" * 80)
-    print("使用示例: python cli/main.py scan --module=hostscanner --params='{\"ip_range\":\"192.168.1.1/24\"}'")
+    print("使用示例: python cli/main.py scan --module=hostscanner --target=192.168.1.1/24")
+
+def load_targets_from_file(file_path) -> list:
+    """
+    从文件加载目标
+    
+    Args:
+        file_path: 文件路径
+        
+    Returns:
+        目标列表
+    """
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            targets = [line.strip() for line in f if line.strip()]
+        return targets
+    except Exception as e:
+        logger.error(f"从文件加载目标失败: {str(e)}")
+        sys.exit(1)
 
 def load_params(args) -> Dict[str, Any]:
     """
@@ -142,6 +165,49 @@ def load_params(args) -> Dict[str, Any]:
         except (IOError, json.JSONDecodeError) as e:
             logger.error(f"从文件加载参数失败: {str(e)}")
             sys.exit(1)
+    
+    # 处理直接输入的参数
+    # 目标
+    if args.target:
+        # 根据模块类型设置对应的参数键名
+        # 大多数扫描器使用ip_range, domain, url等作为目标参数
+        module_id = args.module.lower()
+        if 'ip' in module_id or 'host' in module_id or 'port' in module_id:
+            params['ip_range'] = args.target
+        elif 'domain' in module_id:
+            params['domain'] = args.target
+        elif 'url' in module_id or 'web' in module_id:
+            params['url'] = args.target
+        else:
+            # 默认使用target作为键
+            params['target'] = args.target
+    
+    # 从文件加载目标
+    if args.target_file:
+        targets = load_targets_from_file(args.target_file)
+        if targets:
+            # 根据模块类型设置对应的参数键名
+            module_id = args.module.lower()
+            if 'ip' in module_id or 'host' in module_id or 'port' in module_id:
+                params['ip_list'] = targets
+            elif 'domain' in module_id:
+                params['domain_list'] = targets
+            elif 'url' in module_id or 'web' in module_id:
+                params['url_list'] = targets
+            else:
+                params['target_list'] = targets
+    
+    # 端口
+    if args.port:
+        params['port'] = args.port
+    
+    # 线程数
+    if args.threads:
+        params['threads'] = args.threads
+    
+    # 超时时间
+    if args.timeout:
+        params['timeout'] = args.timeout
     
     return params
 

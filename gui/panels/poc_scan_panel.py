@@ -16,7 +16,8 @@ from PyQt5.QtWidgets import (
     QLineEdit, QTextEdit, QComboBox, QSpinBox, QCheckBox,
     QTableWidget, QTableWidgetItem, QHeaderView, QFileDialog,
     QTabWidget, QGroupBox, QFormLayout, QMessageBox, QSplitter,
-    QProgressBar, QToolButton, QMenu, QAction, QDialog, QDialogButtonBox
+    QProgressBar, QToolButton, QMenu, QAction, QDialog, QDialogButtonBox,
+    QGridLayout, QRadioButton, QProgressDialog
 )
 from PyQt5.QtCore import Qt, pyqtSignal, QThread, QSize, QSortFilterProxyModel
 from PyQt5.QtGui import QIcon, QColor, QStandardItemModel, QStandardItem
@@ -512,6 +513,11 @@ def verify(target: str, session=None, **kwargs) -> Tuple[bool, str]:
 class POCScanPanel(QWidget):
     """POC扫描面板"""
     
+    # 添加自定义信号用于线程安全的UI更新
+    update_progress_signal = pyqtSignal(int, str)
+    add_result_signal = pyqtSignal(dict)
+    scan_finished_signal = pyqtSignal(object)
+    
     def __init__(self, parent=None):
         super().__init__(parent)
         self.logger = logging.getLogger("gui.panels.poc_scan")
@@ -539,97 +545,110 @@ class POCScanPanel(QWidget):
         """初始化UI组件"""
         # 创建主布局
         main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(2, 2, 2, 2)  # 减小边距
-        main_layout.setSpacing(2)  # 减小间距
+        main_layout.setContentsMargins(1, 1, 1, 1)  # 进一步减小边距
+        main_layout.setSpacing(1)  # 进一步减小间距
         
         # 创建顶部控制区域和结果区域的分割器
         splitter = QSplitter(Qt.Vertical)
         
         # === 顶部控制区域 ===
-        control_widget = QWidget()
-        control_layout = QVBoxLayout(control_widget)
-        control_layout.setContentsMargins(0, 0, 0, 0)
-        control_layout.setSpacing(3)  # 减小间距
+        top_widget = QWidget()
+        top_layout = QVBoxLayout(top_widget)
+        top_layout.setContentsMargins(0, 0, 0, 0)
+        top_layout.setSpacing(2)  # 减小间距
         
-        # --- 参数设置区域 ---
-        param_group = QGroupBox("扫描参数")
-        param_layout = QFormLayout(param_group)
-        param_layout.setContentsMargins(5, 5, 5, 5)  # 减小内边距
-        param_layout.setVerticalSpacing(3)  # 减小垂直间距
-        param_layout.setHorizontalSpacing(5)  # 减小水平间距
+        # 创建左右布局，左侧为基本参数，右侧为POC选择
+        params_layout = QHBoxLayout()
+        params_layout.setSpacing(2)  # 减小间距
+        
+        # --- 左侧：基本参数和扫描设置 ---
+        basic_params_group = QGroupBox("基本参数")
+        basic_form_layout = QFormLayout(basic_params_group)
+        basic_form_layout.setContentsMargins(3, 5, 3, 3)  # 减小内边距
+        basic_form_layout.setVerticalSpacing(2)  # 减小垂直间距
+        basic_form_layout.setHorizontalSpacing(3)  # 减小水平间距
+        basic_form_layout.setFieldGrowthPolicy(QFormLayout.ExpandingFieldsGrow)  # 允许字段扩展
         
         # 目标输入和文件加载按钮在同一行
         target_layout = QHBoxLayout()
-        target_layout.setSpacing(3)
+        target_layout.setSpacing(2)
         
         self.target_input = QLineEdit()
         self.target_input.setPlaceholderText("输入目标URL，多个目标用逗号分隔")
+        self.target_input.setMinimumHeight(22)  # 设置最小高度
         target_layout.addWidget(self.target_input)
         
         self.load_file_btn = QPushButton("文件")
-        self.load_file_btn.setFixedWidth(40)  # 减小按钮宽度
+        self.load_file_btn.setFixedWidth(35)  # 减小按钮宽度
+        self.load_file_btn.setFixedHeight(22)  # 设置固定高度
         self.load_file_btn.setToolTip("从文件加载目标")
         target_layout.addWidget(self.load_file_btn)
         
-        param_layout.addRow("目标:", target_layout)
+        basic_form_layout.addRow("目标:", target_layout)
         
-        # 创建一个水平布局用于放置线程和超时控件
-        params_layout = QHBoxLayout()
-        params_layout.setSpacing(10)
+        # 线程与超时设置
+        thread_timeout_widget = QWidget()
+        thread_timeout_layout = QHBoxLayout(thread_timeout_widget)
+        thread_timeout_layout.setContentsMargins(0, 0, 0, 0)
         
-        # 线程数
-        threads_layout = QHBoxLayout()
-        threads_layout.setSpacing(2)
+        thread_layout = QHBoxLayout()
+        thread_layout.addWidget(QLabel("线程数:"))
         self.threads_input = QSpinBox()
         self.threads_input.setRange(1, 50)
         self.threads_input.setValue(10)
-        self.threads_input.setFixedWidth(50)  # 减小宽度
-        threads_layout.addWidget(self.threads_input)
-        threads_layout.addWidget(QLabel("线程"))
+        self.threads_input.setFixedWidth(45)  # 减小宽度
+        self.threads_input.setFixedHeight(22)  # 设置固定高度
+        thread_layout.addWidget(self.threads_input)
+        thread_timeout_layout.addLayout(thread_layout)
         
-        params_layout.addLayout(threads_layout)
+        thread_timeout_layout.addSpacing(10)  # 添加间距分隔
         
-        # 超时时间
         timeout_layout = QHBoxLayout()
-        timeout_layout.setSpacing(2)
+        timeout_layout.addWidget(QLabel("超时:"))
         self.timeout_input = QSpinBox()
         self.timeout_input.setRange(1, 60)
         self.timeout_input.setValue(10)
-        self.timeout_input.setFixedWidth(50)  # 减小宽度
+        self.timeout_input.setSuffix(" 秒")
+        self.timeout_input.setFixedWidth(55)  # 减小宽度
+        self.timeout_input.setFixedHeight(22)  # 设置固定高度
         timeout_layout.addWidget(self.timeout_input)
-        timeout_layout.addWidget(QLabel("秒"))
+        thread_timeout_layout.addLayout(timeout_layout)
         
-        params_layout.addLayout(timeout_layout)
+        basic_form_layout.addRow("", thread_timeout_widget)
+        
+        # 扫描深度与SSL验证选项
+        scan_options_widget = QWidget()
+        scan_options_layout = QHBoxLayout(scan_options_widget)
+        scan_options_layout.setContentsMargins(0, 0, 0, 0)
         
         # 扫描深度
         depth_layout = QHBoxLayout()
-        depth_layout.setSpacing(2)
-        depth_layout.addWidget(QLabel("深度:"))
+        depth_layout.addWidget(QLabel("扫描深度:"))
         self.scan_depth_combo = QComboBox()
         self.scan_depth_combo.addItem("基本", 0)
         self.scan_depth_combo.addItem("标准", 1)
         self.scan_depth_combo.addItem("深度", 2)
         self.scan_depth_combo.setCurrentIndex(1)  # 默认标准扫描
-        self.scan_depth_combo.setFixedWidth(55)  # 减小宽度
+        self.scan_depth_combo.setFixedWidth(50)  # 减小宽度
+        self.scan_depth_combo.setFixedHeight(22)  # 设置固定高度
         depth_layout.addWidget(self.scan_depth_combo)
+        scan_options_layout.addLayout(depth_layout)
         
-        params_layout.addLayout(depth_layout)
+        scan_options_layout.addSpacing(10)  # 添加间距
         
         # SSL验证
-        self.verify_ssl_check = QCheckBox("验证SSL")
+        self.verify_ssl_check = QCheckBox("验证SSL证书")
         self.verify_ssl_check.setChecked(False)
-        params_layout.addWidget(self.verify_ssl_check)
+        scan_options_layout.addWidget(self.verify_ssl_check)
         
-        # 添加参数布局到表单
-        param_layout.addRow("配置:", params_layout)
+        scan_options_layout.addStretch()
+        basic_form_layout.addRow("", scan_options_widget)
         
-        control_layout.addWidget(param_group)
-        
-        # --- POC选择区域 ---
+        # --- 右侧：POC 选择区域 ---
         poc_group = QGroupBox("POC选择")
         poc_layout = QVBoxLayout(poc_group)
-        poc_layout.setContentsMargins(5, 5, 5, 5)  # 减小内边距
-        poc_layout.setSpacing(3)  # 减小间距
+        poc_layout.setContentsMargins(3, 5, 3, 3)  # 减小内边距
+        poc_layout.setSpacing(2)  # 减小间距
         
         # POC选择摘要
         self.poc_summary_label = QLabel("请选择POC")
@@ -637,14 +656,15 @@ class POCScanPanel(QWidget):
         
         # POC管理按钮
         poc_btn_layout = QHBoxLayout()
-        poc_btn_layout.setSpacing(3)  # 减小按钮间距
+        poc_btn_layout.setSpacing(2)  # 减小按钮间距
         
         self.manage_poc_btn = QPushButton("管理POC")
+        self.manage_poc_btn.setFixedHeight(22)  # 设置固定高度
         self.manage_poc_btn.clicked.connect(self.show_poc_manager)
         
         self.reload_poc_btn = QPushButton("刷新")
-        self.reload_poc_btn.setFixedWidth(50)
-        self.reload_poc_btn.clicked.connect(self.reload_poc_list)
+        self.reload_poc_btn.setFixedWidth(40)
+        self.reload_poc_btn.setFixedHeight(22)  # 设置固定高度
         
         poc_btn_layout.addWidget(self.manage_poc_btn)
         poc_btn_layout.addWidget(self.reload_poc_btn)
@@ -652,79 +672,57 @@ class POCScanPanel(QWidget):
         
         poc_layout.addLayout(poc_btn_layout)
         
-        control_layout.addWidget(poc_group)
+        # 将左右区域添加到参数布局，并调整比例
+        params_layout.addWidget(basic_params_group, 2)  # 基本参数组占比更大
+        params_layout.addWidget(poc_group, 1)  # POC组占比更小
         
-        # --- 操作按钮和进度区域的组合布局 ---
-        action_progress_layout = QHBoxLayout()
-        action_progress_layout.setSpacing(5)
+        # 添加参数布局到顶部布局
+        top_layout.addLayout(params_layout)
         
-        # 操作按钮区域
-        action_layout = QVBoxLayout()
-        action_layout.setSpacing(3)
-        
-        # 第一行按钮
-        action_row1 = QHBoxLayout()
-        action_row1.setSpacing(3)
+        # 操作按钮行
+        control_layout = QHBoxLayout()
+        control_layout.setSpacing(3)
         
         self.start_btn = QPushButton("开始扫描")
-        self.start_btn.setFixedWidth(80)
+        self.start_btn.setFixedHeight(25)  # 按钮稍微高一点以便操作
+        control_layout.addWidget(self.start_btn)
+        
         self.stop_btn = QPushButton("停止")
         self.stop_btn.setEnabled(False)
-        self.stop_btn.setFixedWidth(80)
+        self.stop_btn.setFixedHeight(25)
+        control_layout.addWidget(self.stop_btn)
         
-        action_row1.addWidget(self.start_btn)
-        action_row1.addWidget(self.stop_btn)
-        
-        # 第二行按钮
-        action_row2 = QHBoxLayout()
-        action_row2.setSpacing(3)
-        
-        self.export_btn = QPushButton("导出")
+        self.export_btn = QPushButton("导出报告")
         self.export_btn.setEnabled(False)
-        self.export_btn.setFixedWidth(80)
+        self.export_btn.setFixedHeight(25)
+        control_layout.addWidget(self.export_btn)
+        
         self.clear_btn = QPushButton("清空")
-        self.clear_btn.setFixedWidth(80)
+        self.clear_btn.setFixedHeight(25)
+        control_layout.addWidget(self.clear_btn)
         
-        action_row2.addWidget(self.export_btn)
-        action_row2.addWidget(self.clear_btn)
+        control_layout.addStretch()
         
-        action_layout.addLayout(action_row1)
-        action_layout.addLayout(action_row2)
+        top_layout.addLayout(control_layout)
         
-        action_progress_layout.addLayout(action_layout)
-        
-        # 进度条区域
-        progress_layout = QVBoxLayout()
-        progress_layout.setSpacing(2)
-        
+        # 进度条和状态标签
         self.progress_bar = QProgressBar()
         self.progress_bar.setRange(0, 100)
         self.progress_bar.setValue(0)
+        top_layout.addWidget(self.progress_bar)
+        
         self.progress_label = QLabel("就绪")
-        self.progress_label.setFixedHeight(15)  # 减小高度
+        top_layout.addWidget(self.progress_label)
         
-        progress_layout.addWidget(self.progress_bar)
-        progress_layout.addWidget(self.progress_label)
-        
-        action_progress_layout.addLayout(progress_layout)
-        action_progress_layout.setStretch(0, 1)  # 按钮区域占1份
-        action_progress_layout.setStretch(1, 2)  # 进度条区域占2份
-        
-        control_layout.addLayout(action_progress_layout)
-        
-        # 添加控制区域到分割器
-        splitter.addWidget(control_widget)
-        
-        # === 扫描结果区域 ===
+        # === 结果区域 ===
         result_widget = QWidget()
         result_layout = QVBoxLayout(result_widget)
         result_layout.setContentsMargins(0, 0, 0, 0)
-        result_layout.setSpacing(2)  # 减小间距
+        result_layout.setSpacing(1)  # 进一步减小间距
         
-        # 选项卡
+        # 结果标签页
         self.result_tabs = QTabWidget()
         self.result_tabs.setDocumentMode(True)  # 使用更紧凑的文档模式
-        self.result_tabs.setTabPosition(QTabWidget.South)  # 底部标签页，节省空间
         
         # 漏洞表格
         self.vuln_table = QTableWidget()
@@ -735,8 +733,9 @@ class POCScanPanel(QWidget):
         self.vuln_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
         self.vuln_table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeToContents)
         self.vuln_table.horizontalHeader().setSectionResizeMode(4, QHeaderView.Stretch)
-        # 设置更紧凑的行高
-        self.vuln_table.verticalHeader().setDefaultSectionSize(22)
+        # 设置紧凑的行高
+        self.vuln_table.verticalHeader().setDefaultSectionSize(20)  # 减小默认行高
+        self.vuln_table.verticalHeader().setVisible(False)  # 隐藏行号，节省空间
         
         # 详情文本框
         self.detail_text = QTextEdit()
@@ -748,10 +747,11 @@ class POCScanPanel(QWidget):
         
         result_layout.addWidget(self.result_tabs)
         
-        # 添加结果区域到分割器
+        # 添加控制区域和结果区域到分割器
+        splitter.addWidget(top_widget)
         splitter.addWidget(result_widget)
         
-        # 设置分割器的初始大小 - 控制区域占更少的空间
+        # 设置分割器的初始大小比例
         splitter.setSizes([200, 500])  # 控制区域更紧凑
         
         # 添加分割器到主布局
@@ -776,6 +776,11 @@ class POCScanPanel(QWidget):
         
         # 漏洞表格选择
         self.vuln_table.itemSelectionChanged.connect(self.update_detail_view)
+        
+        # 连接自定义信号到对应的槽函数，用于线程安全的UI更新
+        self.update_progress_signal.connect(self._update_progress_ui)
+        self.add_result_signal.connect(self._add_result_to_table)
+        self.scan_finished_signal.connect(self._update_ui_after_scan)
     
     def reload_poc_list(self):
         """重新加载POC列表"""
@@ -983,53 +988,88 @@ class POCScanPanel(QWidget):
     
     def on_scan_finished(self, result):
         """扫描完成回调"""
+        # 保存结果引用
         self.last_scan_result = result
         
-        # 更新UI状态
-        self.start_btn.setEnabled(True)
-        self.stop_btn.setEnabled(False)
+        # 通过信号发送扫描完成通知，确保在主线程中安全更新UI
+        self.scan_finished_signal.emit(result)
+    
+    def _update_ui_after_scan(self, result):
+        """在主线程中安全地更新扫描完成后的UI
         
-        # 如果有结果，启用导出按钮
-        if self.vuln_table.rowCount() > 0:
-            self.export_btn.setEnabled(True)
-        
-        # 更新进度条和标签
-        if result.success:
-            self.progress_bar.setValue(100)
-            self.progress_label.setText("扫描完成")
-        else:
-            self.progress_bar.setValue(0)
-            self.progress_label.setText("扫描失败")
-        
-        # 显示扫描统计
-        vuln_count = len([r for r in result.data if r.get("status") == "vulnerable"])
-        total_count = len(result.data)
-        
-        if result.success:
-            # 成功情况
-            message = f"POC扫描完成，共检查了 {total_count} 个结果，发现 {vuln_count} 个漏洞。\n"
-            message += f"用时: {result.duration:.2f} 秒"
+        Args:
+            result: 扫描结果对象
+        """
+        try:
+            # 更新UI状态
+            self.start_btn.setEnabled(True)
+            self.stop_btn.setEnabled(False)
             
-            # 显示摘要信息
-            summary = next((r for r in result.data if r.get("check_type") == "poc_scan_summary"), None)
-            if summary:
-                vuln_targets = summary.get("vulnerable_targets", 0)
-                total_targets = summary.get("total_targets", 0)
-                message += f"\n发现 {vuln_targets}/{total_targets} 个目标存在漏洞"
+            # 如果有结果，启用导出按钮
+            if self.vuln_table.rowCount() > 0:
+                self.export_btn.setEnabled(True)
             
-            QMessageBox.information(self, "扫描完成", message)
-        else:
-            # 失败情况
-            error_msg = result.error_msg if result.error_msg else "未知错误"
-            QMessageBox.warning(
-                self, "扫描异常", 
-                f"POC扫描过程中发生错误: {error_msg}"
-            )
+            # 更新进度条和标签
+            if result.success:
+                self.progress_bar.setValue(100)
+                self.progress_label.setText("扫描完成")
+            else:
+                self.progress_bar.setValue(0)
+                self.progress_label.setText("扫描失败")
+            
+            # 显示扫描统计
+            vuln_count = len([r for r in result.data if r.get("status") == "vulnerable"])
+            total_count = len(result.data)
+            
+            if result.success:
+                # 成功情况
+                message = f"POC扫描完成，共检查了 {total_count} 个结果，发现 {vuln_count} 个漏洞。\n"
+                message += f"用时: {result.duration:.2f} 秒"
+                
+                # 显示摘要信息
+                summary = next((r for r in result.data if r.get("check_type") == "poc_scan_summary"), None)
+                if summary:
+                    vuln_targets = summary.get("vulnerable_targets", 0)
+                    total_targets = summary.get("total_targets", 0)
+                    message += f"\n发现 {vuln_targets}/{total_targets} 个目标存在漏洞"
+                
+                QMessageBox.information(self, "扫描完成", message)
+            else:
+                # 失败情况
+                error_msg = result.error_msg if result.error_msg else "未知错误"
+                QMessageBox.warning(
+                    self, "扫描异常", 
+                    f"POC扫描过程中发生错误: {error_msg}"
+                )
+        except Exception as e:
+            self.logger.error(f"更新扫描完成UI时出错: {str(e)}")
+            import traceback
+            self.logger.debug(traceback.format_exc())
     
     def update_progress(self, percent, message):
-        """更新进度"""
-        self.progress_bar.setValue(percent)
-        self.progress_label.setText(message)
+        """更新进度
+        
+        Args:
+            percent: 进度百分比
+            message: 进度消息
+        """
+        # 使用信号发送进度更新，确保在主线程中安全更新UI
+        self.update_progress_signal.emit(percent, message)
+    
+    def _update_progress_ui(self, percent, message):
+        """在主线程中安全地更新进度UI
+        
+        Args:
+            percent: 进度百分比
+            message: 进度消息
+        """
+        try:
+            self.progress_bar.setValue(percent)
+            self.progress_label.setText(message)
+        except Exception as e:
+            self.logger.error(f"更新进度UI时出错: {str(e)}")
+            import traceback
+            self.logger.debug(traceback.format_exc())
     
     def on_result_received(self, result):
         """接收扫描结果"""
@@ -1042,6 +1082,22 @@ class POCScanPanel(QWidget):
             if result.get("check_type") != "vulnerability":
                 return
             
+            # 通过信号发送结果，确保在主线程中安全更新UI
+            self.add_result_signal.emit(result)
+            
+        except Exception as e:
+            # 处理结果解析错误
+            self.logger.error(f"处理扫描结果时出错: {str(e)}")
+            import traceback
+            self.logger.debug(traceback.format_exc())
+    
+    def _add_result_to_table(self, result):
+        """在主线程中安全地添加结果到表格
+        
+        Args:
+            result: 扫描结果字典
+        """
+        try:
             # 添加新行
             row = self.vuln_table.rowCount()
             self.vuln_table.insertRow(row)
@@ -1099,7 +1155,7 @@ class POCScanPanel(QWidget):
             
         except Exception as e:
             # 处理结果解析错误
-            self.logger.error(f"处理扫描结果时出错: {str(e)}")
+            self.logger.error(f"添加结果到表格时出错: {str(e)}")
             import traceback
             self.logger.debug(traceback.format_exc())
     
@@ -1183,26 +1239,96 @@ class POCScanPanel(QWidget):
             QMessageBox.warning(self, "导出错误", "没有可导出的扫描结果")
             return
         
-        # 选择保存路径
-        file_path, _ = QFileDialog.getSaveFileName(
-            self, "选择保存路径", "poc_scan_report.html", "HTML报告 (*.html);;所有文件 (*)"
-        )
+        # 创建格式选择对话框
+        format_dialog = QDialog(self)
+        format_dialog.setWindowTitle("选择报告格式")
+        format_dialog.setMinimumWidth(300)
         
-        if not file_path:
-            return
+        layout = QVBoxLayout(format_dialog)
         
+        # 添加说明标签
+        label = QLabel("请选择要生成的报告格式:")
+        layout.addWidget(label)
+        
+        # 添加格式选择单选按钮
+        html_radio = QRadioButton("HTML格式")
+        html_radio.setChecked(True)  # 默认选中HTML
+        layout.addWidget(html_radio)
+        
+        pdf_radio = QRadioButton("PDF格式")
+        layout.addWidget(pdf_radio)
+        
+        html_desc = QLabel("HTML格式: 浏览器友好，包含完整样式和交互功能")
+        html_desc.setStyleSheet("color: gray; font-size: 15px;")
+        layout.addWidget(html_desc)
+        
+        pdf_desc = QLabel("PDF格式: 适合打印和分享，需要额外依赖")
+        pdf_desc.setStyleSheet("color: gray; font-size: 15px;")
+        layout.addWidget(pdf_desc)
+        
+        # 添加按钮
+        button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        button_box.accepted.connect(format_dialog.accept)
+        button_box.rejected.connect(format_dialog.reject)
+        layout.addWidget(button_box)
+        
+        # 显示对话框
+        if format_dialog.exec_() == QDialog.Accepted:
+            # 根据用户选择的格式生成报告
+            format_type = "pdf" if pdf_radio.isChecked() else "html"
+            self.generate_scan_report(self.last_scan_result, "poc_vulnerability_scan", format_type)
+        
+    def generate_scan_report(self, result, report_name, format_type="html"):
+        """生成扫描报告
+        
+        Args:
+            result: ScanResult对象
+            report_name: 报告名称
+            format_type: 报告格式，"html"或"pdf"
+        """
         try:
             from utils.report_generator import generate_report
+            import os
+            
+            # 显示进度对话框
+            progress_dialog = QProgressDialog("正在生成报告...", "取消", 0, 100, self)
+            progress_dialog.setWindowTitle("生成报告")
+            progress_dialog.setMinimumDuration(500)  # 显示对话框前的最小延迟
+            progress_dialog.setWindowModality(Qt.WindowModal)
+            progress_dialog.setValue(10)
+            
+            # 确保报告目录存在
+            reports_dir = os.path.join(os.getcwd(), "reports")
+            if not os.path.exists(reports_dir):
+                os.makedirs(reports_dir)
+            
+            # 更新进度
+            progress_dialog.setValue(20)
+            
+            # 准备元数据
+            metadata = {}
             
             # 生成标识
             scan_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
             
-            # 构建元数据
+            # 获取目标URL
+            targets = self.target_input.text().strip().split(',')
+            
+            # 提取所有URL作为alive_urls
+            alive_urls = []
+            for result_item in result.data:
+                if isinstance(result_item, dict) and "url" in result_item:
+                    url = result_item.get("url")
+                    if url and url not in alive_urls:
+                        alive_urls.append(url)
+            
+            # 统一元数据格式
             metadata = {
                 "module": "POC漏洞扫描",
                 "scan_time": scan_time,
-                "targets": self.target_input.text().strip().split(','),
-                "config": {
+                "target_urls": targets,  # 使用统一的字段名
+                "alive_urls": alive_urls,
+                "scan_config": {  # 使用统一的字段名
                     "threads": self.threads_input.value(),
                     "timeout": self.timeout_input.value(),
                     "scan_depth": self.scan_depth_combo.currentIndex(),
@@ -1210,27 +1336,69 @@ class POCScanPanel(QWidget):
                 }
             }
             
-            # 生成报告
+            # 更新进度
+            progress_dialog.setValue(30)
+            
+            # 调用报告生成函数
+            self.logger.info(f"开始生成{format_type}格式POC扫描报告...")
             report_path = generate_report(
-                self.last_scan_result.data,
-                metadata,
-                os.path.dirname(file_path),
-                "html"
+                data=result.data,
+                metadata=metadata,
+                output_dir=reports_dir,
+                format_type=format_type
             )
             
-            if report_path:
-                QMessageBox.information(
-                    self, "导出成功", f"扫描报告已保存到:\n{report_path}"
-                )
-            else:
-                QMessageBox.warning(
-                    self, "导出失败", "生成报告失败，请检查日志"
+            # 更新进度
+            progress_dialog.setValue(90)
+            
+            # 检查报告是否生成成功
+            if report_path and os.path.exists(report_path):
+                # 关闭进度对话框
+                progress_dialog.setValue(100)
+                
+                # 创建更详细的成功消息
+                msg = f"报告已成功生成: {os.path.basename(report_path)}\n位置: {os.path.dirname(report_path)}"
+                
+                # 如果是PDF格式且文件较小，可能是简化版
+                if format_type.lower() == "pdf":
+                    html_path = report_path.replace(".pdf", ".html")
+                    if os.path.exists(html_path):
+                        pdf_size = os.path.getsize(report_path)
+                        html_size = os.path.getsize(html_path)
+                        if pdf_size < html_size * 0.5:
+                            msg += "\n\n注意: 生成的是简化版PDF。如需更完整的PDF，请安装wkhtmltopdf。"
+                
+                # 询问用户是否打开报告
+                reply = QMessageBox.question(
+                    self, 
+                    "报告生成成功", 
+                    f"{msg}\n\n是否立即打开?",
+                    QMessageBox.Yes | QMessageBox.No, 
+                    QMessageBox.Yes
                 )
                 
+                if reply == QMessageBox.Yes:
+                    # 使用系统默认程序打开报告
+                    import webbrowser
+                    self.logger.info(f"正在打开报告: {report_path}")
+                    webbrowser.open('file://' + os.path.abspath(report_path))
+                    
+                self.logger.info(f"报告生成完成: {report_path}")
+                return report_path
+            else:
+                progress_dialog.close()
+                self.logger.error("报告生成失败")
+                QMessageBox.warning(self, "警告", "报告生成失败，请检查日志")
+                return None
+                
+        except ImportError as e:
+            self.logger.error(f"导入report_generator模块失败: {str(e)}")
+            QMessageBox.critical(self, "错误", f"导入报告生成模块失败: {str(e)}")
+            return None
         except Exception as e:
-            QMessageBox.critical(
-                self, "导出错误", f"导出结果时出错: {str(e)}"
-            )
+            self.logger.error(f"生成报告时出错: {str(e)}", exc_info=True)
+            QMessageBox.critical(self, "错误", f"生成报告时出错: {str(e)}")
+            return None
 
     def show_add_poc_dialog(self):
         """显示添加POC对话框 - 为兼容性保留"""

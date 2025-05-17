@@ -120,6 +120,10 @@ class PingMonitor(BaseScanner):
         持续监控所有目标主机
         """
         targets = self.parse_targets()
+        if not targets:
+            self.logger.info("没有有效的监控目标，监控线程退出。")
+            return
+
         count = self.config["count"]
         interval = self.config["interval"]
         max_threads = min(self.config["max_threads"], 20)  # 限制最大线程数为20
@@ -178,8 +182,20 @@ class PingMonitor(BaseScanner):
             elapsed = time.time() - start_time
             wait_time = max(0, interval - elapsed)
             
-            if wait_time > 0 and not self._stopped and (count == 0 or current_count < count):
-                time.sleep(wait_time)
+            # 在休眠前再次检查停止标志
+            if self._stopped: 
+                break
+
+            if wait_time > 0 and (count == 0 or current_count < count):
+                # 使 sleep 可中断
+                sleep_start_time = time.time()
+                while time.time() - sleep_start_time < wait_time:
+                    if self._stopped:
+                        break
+                    time.sleep(min(0.1, wait_time - (time.time() - sleep_start_time))) # 短暂休眠并检查
+            
+            if self._stopped: # 再次检查，确保循环能正确退出
+                break
     
     def parse_targets(self) -> List[str]:
         """
@@ -352,7 +368,6 @@ class PingMonitor(BaseScanner):
         
         target_count = len(targets)
         
-        # 记录大量IP的警告日志
         if target_count > 100:
             self.logger.warning(f"Ping监控目标数量较大 ({target_count} 个IP)，可能影响性能")
         
@@ -360,52 +375,37 @@ class PingMonitor(BaseScanner):
         
         # 启动监控线程
         self._monitor_thread = threading.Thread(target=self.monitor_thread)
-        self._monitor_thread.daemon = True
+        self._monitor_thread.daemon = True # 设置为守护线程，以便主程序退出时它也能退出
         self._monitor_thread.start()
         
-        # 非阻塞模式下，直接返回初始状态
-        if self.config["count"] == 0:
-            # 不记录"Scan completed"日志，因为监控仍在进行中
-            result = ScanResult(
-                success=True,
-                data=[{
-                    "status": "running",
-                    "message": f"监控已启动，目标: {target_count} 个主机，间隔: {self.config['interval']}秒",
-                    "targets": target_count
-                }]
-            )
-            
-            # 添加元数据
-            result.metadata = {
-                "target_count": target_count,
-                "interval": self.config["interval"],
-                "mode": "continuous"
-            }
-            
-            return result
-        
-        # 阻塞模式下，等待监控完成
-        self._monitor_thread.join()
-        
+        # 对于持续监控模式 (count == 0)，run_scan 需要阻塞直到监控被外部停止
+        # 或对于有限次数监控，直到次数完成。
+        # BaseScanner.execute() 会处理最终的ScanResult返回。
+        # 这里我们通过 join 等待内部监控线程的结束。
+        if self._monitor_thread:
+            self._monitor_thread.join() # 等待 monitor_thread 完成或被 stop 中断
+
+        # 当 self._monitor_thread.join() 返回后，说明监控已结束 (正常完成或被停止)
+        # 此时，结果已经收集在 self._results 中
+        self.logger.info(f"Ping 监控线程已结束。收集到 {len(self._results)} 条原始记录。")
+
         # 分析结果
-        analysis = self.analyze_results()
+        # 无论如何都尝试分析已有的结果
+        analysis = self.analyze_results() 
+        final_data_to_return = [analysis] if analysis.get("hosts") else []
+
+        # 根据是否有错误信息（例如解析目标失败在更早阶段就会返回）或是否有有效分析结果来判断成功
+        success = not self.config.get("_error_early_exit", False) and bool(final_data_to_return)
+        error_msg = "" if success else self.config.get("error_msg_override", "监控未产生有效数据或被提前中止")
         
-        self.logger.info(f"Ping 监控完成，共 {analysis['total_checks']} 次检查")
-        
-        result = ScanResult(
-            success=True,
-            data=[analysis]
+        if not success and not error_msg and not final_data_to_return:
+             error_msg = "监控结束，但未收集到任何数据。"
+
+        return ScanResult(
+            success=success,
+            data=final_data_to_return,
+            error_msg=error_msg
         )
-        
-        # 添加元数据
-        result.metadata = {
-            "target_count": target_count,
-            "interval": self.config["interval"],
-            "mode": "limited",
-            "total_checks": analysis.get("total_checks", 0)
-        }
-        
-        return result
     
     def get_results(self) -> List[Dict[str, Any]]:
         """
@@ -436,10 +436,10 @@ class PingMonitor(BaseScanner):
     
     def stop(self) -> None:
         """停止监控"""
-        self._stopped = True
+        self.logger.info("请求停止 Ping 监控 (PingMonitor.stop)...")
+        self._stopped = True # 这个标志会由 monitor_thread 和 ping_host 检查
         
-        if self._monitor_thread and self._monitor_thread.is_alive():
-            self._monitor_thread.join(timeout=2.0)
-        
-        self.logger.info("Ping 监控已停止")
+        # monitor_thread 中的 self._monitor_thread.join() 将会因为 _stopped=True 导致的内部循环退出而返回
+        # BaseScanner.stop() 可能会被调用，但 PingMonitor 的主要停止逻辑依赖 _stopped
         super().stop() 
+        self.logger.info("PingMonitor.stop 完成.") 

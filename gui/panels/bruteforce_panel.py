@@ -62,171 +62,263 @@ class BruteforcePanel(QWidget):
         control_layout.setContentsMargins(0, 0, 0, 0)
         control_layout.setSpacing(3)  # 减小间距
         
-        # --- 参数设置区域 ---
-        param_group = QGroupBox("扫描参数")
-        param_layout = QFormLayout(param_group)
-        param_layout.setContentsMargins(5, 5, 5, 5)  # 减小内边距
-        param_layout.setVerticalSpacing(3)  # 减小垂直间距
-        param_layout.setHorizontalSpacing(5)  # 减小水平间距
+        # 创建左右布局来放置基本参数和高级设置
+        params_layout = QHBoxLayout()
+        params_layout.setSpacing(2)  # 减小组件间间距
+        
+        # --- 左侧：基本参数区域 ---
+        basic_params_group = QGroupBox("基本参数")
+        basic_params_layout = QVBoxLayout(basic_params_group)
+        basic_params_layout.setContentsMargins(5, 8, 5, 5)  # 减小边距
+        basic_params_layout.setSpacing(3)  # 减小垂直间距
+        
+        # 扫描模式选择
+        mode_layout = QHBoxLayout()
+        mode_layout.setSpacing(3)
+        
+        mode_label = QLabel("模式:")
+        mode_label.setFixedWidth(50)  # 统一标签宽度
+        mode_layout.addWidget(mode_label)
+        
+        self.mode_combo = QComboBox()
+        self.mode_combo.addItem("单一目标爆破", "single")
+        self.mode_combo.addItem("网段扫描爆破", "network")
+        self.mode_combo.setMinimumHeight(22)  # 统一控件高度
+        mode_layout.addWidget(self.mode_combo)
+        
+        basic_params_layout.addLayout(mode_layout)
         
         # 目标输入和文件加载按钮在同一行
         target_layout = QHBoxLayout()
         target_layout.setSpacing(3)
         
+        target_label = QLabel("目标:")
+        target_label.setFixedWidth(50)  # 统一标签宽度
+        target_layout.addWidget(target_label)
+        
         self.target_input = QLineEdit()
-        self.target_input.setPlaceholderText("输入目标主机，多个目标用逗号分隔")
+        self.target_input.setPlaceholderText("输入目标主机或网段，例如: 192.168.1.0/24")
+        self.target_input.setMinimumHeight(22)  # 统一控件高度
         target_layout.addWidget(self.target_input)
         
         self.load_targets_btn = QPushButton("文件")
         self.load_targets_btn.setFixedWidth(40)  # 减小按钮宽度
+        self.load_targets_btn.setFixedHeight(22)  # 统一按钮高度
         self.load_targets_btn.setToolTip("从文件加载目标")
         target_layout.addWidget(self.load_targets_btn)
         
-        param_layout.addRow("目标:", target_layout)
+        basic_params_layout.addLayout(target_layout)
         
         # 服务类型选择
         service_layout = QHBoxLayout()
         service_layout.setSpacing(3)
         
+        service_label = QLabel("服务:")
+        service_label.setFixedWidth(50)  # 统一标签宽度
+        service_layout.addWidget(service_label)
+        
+        service_type_port_layout = QHBoxLayout()
+        service_type_port_layout.setSpacing(5)
+        
         self.service_combo = QComboBox()
         self.service_combo.setToolTip("选择要爆破的服务类型")
-        service_layout.addWidget(self.service_combo)
+        self.service_combo.setMinimumHeight(22)  # 统一控件高度
+        service_type_port_layout.addWidget(self.service_combo, 1)  # 让服务类型占据更多空间
         
         # 服务端口
         port_layout = QHBoxLayout()
-        port_layout.setSpacing(3)
+        port_layout.setSpacing(2)
         port_layout.addWidget(QLabel("端口:"))
         self.port_input = QSpinBox()
         self.port_input.setRange(1, 65535)
         self.port_input.setValue(22)  # 默认SSH端口
-        self.port_input.setFixedWidth(70)
+        self.port_input.setFixedWidth(60)
+        self.port_input.setFixedHeight(22)  # 统一控件高度
         port_layout.addWidget(self.port_input)
         
-        service_layout.addLayout(port_layout)
-        param_layout.addRow("服务:", service_layout)
+        service_type_port_layout.addLayout(port_layout)
+        service_layout.addLayout(service_type_port_layout)
+        
+        basic_params_layout.addLayout(service_layout)
         
         # 用户名输入
         username_layout = QHBoxLayout()
         username_layout.setSpacing(3)
         
+        username_label = QLabel("用户名:")
+        username_label.setFixedWidth(50)  # 统一标签宽度
+        username_layout.addWidget(username_label)
+        
         self.username_input = QLineEdit()
         self.username_input.setPlaceholderText("输入用户名，多个用逗号分隔")
+        self.username_input.setMinimumHeight(22)  # 统一控件高度
         username_layout.addWidget(self.username_input)
         
         self.load_usernames_btn = QPushButton("文件")
         self.load_usernames_btn.setFixedWidth(40)
+        self.load_usernames_btn.setFixedHeight(22)  # 统一按钮高度
         self.load_usernames_btn.setToolTip("从文件加载用户名列表")
         username_layout.addWidget(self.load_usernames_btn)
         
-        param_layout.addRow("用户名:", username_layout)
+        basic_params_layout.addLayout(username_layout)
         
         # 密码输入
         password_layout = QHBoxLayout()
         password_layout.setSpacing(3)
         
+        password_label = QLabel("密码:")
+        password_label.setFixedWidth(50)  # 统一标签宽度
+        password_layout.addWidget(password_label)
+        
         self.password_input = QLineEdit()
         self.password_input.setPlaceholderText("输入密码，多个用逗号分隔")
+        self.password_input.setMinimumHeight(22)  # 统一控件高度
         password_layout.addWidget(self.password_input)
         
         self.load_passwords_btn = QPushButton("文件")
         self.load_passwords_btn.setFixedWidth(40)
+        self.load_passwords_btn.setFixedHeight(22)  # 统一按钮高度
         self.load_passwords_btn.setToolTip("从文件加载密码列表")
         password_layout.addWidget(self.load_passwords_btn)
         
-        param_layout.addRow("密码:", password_layout)
+        basic_params_layout.addLayout(password_layout)
         
-        # 创建一个水平布局用于放置线程和超时控件
-        advanced_layout = QHBoxLayout()
-        advanced_layout.setSpacing(10)
+        # 添加弹性空间
+        basic_params_layout.addStretch(1)
         
-        # 线程数
+        # --- 右侧：高级设置区域 ---
+        advanced_params_group = QGroupBox("高级设置")
+        advanced_params_layout = QVBoxLayout(advanced_params_group)
+        advanced_params_layout.setContentsMargins(5, 8, 5, 5)  # 减小边距
+        advanced_params_layout.setSpacing(3)  # 减小垂直间距
+        
+        # 线程数设置
         threads_layout = QHBoxLayout()
-        threads_layout.setSpacing(2)
+        threads_layout.setSpacing(3)
+        
+        threads_label = QLabel("线程数:")
+        threads_label.setFixedWidth(45)  # 统一标签宽度
+        threads_layout.addWidget(threads_label)
+        
         self.threads_input = QSpinBox()
         self.threads_input.setRange(1, 50)
         self.threads_input.setValue(10)
-        self.threads_input.setFixedWidth(50)  # 减小宽度
+        self.threads_input.setFixedWidth(50)
+        self.threads_input.setFixedHeight(22)  # 统一控件高度
         threads_layout.addWidget(self.threads_input)
-        threads_layout.addWidget(QLabel("线程"))
+        threads_layout.addStretch(1)
         
-        advanced_layout.addLayout(threads_layout)
+        advanced_params_layout.addLayout(threads_layout)
         
-        # 超时时间
+        # 超时设置
         timeout_layout = QHBoxLayout()
-        timeout_layout.setSpacing(2)
+        timeout_layout.setSpacing(3)
+        
+        timeout_label = QLabel("超时:")
+        timeout_label.setFixedWidth(45)  # 统一标签宽度
+        timeout_layout.addWidget(timeout_label)
+        
         self.timeout_input = QSpinBox()
         self.timeout_input.setRange(1, 60)
         self.timeout_input.setValue(3)
-        self.timeout_input.setFixedWidth(50)  # 减小宽度
+        self.timeout_input.setSuffix(" 秒")
+        self.timeout_input.setFixedWidth(70)
+        self.timeout_input.setFixedHeight(22)  # 统一控件高度
         timeout_layout.addWidget(self.timeout_input)
-        timeout_layout.addWidget(QLabel("秒"))
+        timeout_layout.addStretch(1)
         
-        advanced_layout.addLayout(timeout_layout)
+        advanced_params_layout.addLayout(timeout_layout)
+
+        # 扫描选项（网段扫描模式下的选项）
+        self.scan_options_group = QGroupBox("扫描选项")
+        self.scan_options_group.setVisible(False)  # 默认隐藏
+        scan_options_layout = QVBoxLayout(self.scan_options_group)
+        scan_options_layout.setContentsMargins(5, 8, 5, 5)
+        scan_options_layout.setSpacing(3)
         
-        # 找到一个成功后停止爆破
-        self.stop_on_success_check = QCheckBox("找到一个即停止")
+        # 服务检测选项
+        self.service_detection_check = QCheckBox("扫描前检测服务是否开放")
+        self.service_detection_check.setChecked(True)
+        scan_options_layout.addWidget(self.service_detection_check)
+        
+        # 只对开放服务爆破选项
+        self.only_brute_open_check = QCheckBox("只对开放的服务进行爆破")
+        self.only_brute_open_check.setChecked(True)
+        scan_options_layout.addWidget(self.only_brute_open_check)
+        
+        advanced_params_layout.addWidget(self.scan_options_group)
+        
+        # 停止条件
+        stop_condition_layout = QHBoxLayout()
+        stop_condition_layout.setSpacing(3)
+        
+        self.stop_on_success_check = QCheckBox("找到一个凭据即停止")
         self.stop_on_success_check.setChecked(True)
-        advanced_layout.addWidget(self.stop_on_success_check)
+        stop_condition_layout.addWidget(self.stop_on_success_check)
+        stop_condition_layout.addStretch(1)
         
-        # 添加参数布局到表单
-        param_layout.addRow("高级:", advanced_layout)
+        advanced_params_layout.addLayout(stop_condition_layout)
         
-        control_layout.addWidget(param_group)
+        # 添加弹性空间
+        advanced_params_layout.addStretch(1)
         
-        # --- 操作按钮和进度区域的组合布局 ---
-        action_progress_layout = QHBoxLayout()
-        action_progress_layout.setSpacing(5)
+        # 将左右参数组添加到参数布局
+        params_layout.addWidget(basic_params_group, 3)  # 基本参数占比更大
+        params_layout.addWidget(advanced_params_group, 2)  # 高级设置占比较小
         
-        # 操作按钮区域
-        action_layout = QVBoxLayout()
-        action_layout.setSpacing(3)
+        # 添加参数布局到控制布局
+        control_layout.addLayout(params_layout)
         
-        # 第一行按钮
-        action_row1 = QHBoxLayout()
-        action_row1.setSpacing(3)
+        # --- 操作按钮区域 ---
+        action_layout = QHBoxLayout()
+        action_layout.setSpacing(5)
         
+        # 统一按钮高度
+        button_height = 25
+        
+        # 操作按钮
         self.start_btn = QPushButton("开始扫描")
-        self.start_btn.setFixedWidth(80)
+        self.start_btn.setFixedHeight(button_height)
+        action_layout.addWidget(self.start_btn)
+        
         self.stop_btn = QPushButton("停止")
         self.stop_btn.setEnabled(False)
-        self.stop_btn.setFixedWidth(80)
-        
-        action_row1.addWidget(self.start_btn)
-        action_row1.addWidget(self.stop_btn)
-        
-        # 第二行按钮
-        action_row2 = QHBoxLayout()
-        action_row2.setSpacing(3)
+        self.stop_btn.setFixedHeight(button_height)
+        action_layout.addWidget(self.stop_btn)
         
         self.clear_btn = QPushButton("清除结果")
-        self.clear_btn.setFixedWidth(80)
-        self.export_btn = QPushButton("导出")
-        self.export_btn.setFixedWidth(80)
+        self.clear_btn.setFixedHeight(button_height)
+        action_layout.addWidget(self.clear_btn)
+        
+        self.export_btn = QPushButton("导出报告")
         self.export_btn.setEnabled(False)
+        self.export_btn.setFixedHeight(button_height)
+        action_layout.addWidget(self.export_btn)
         
-        action_row2.addWidget(self.clear_btn)
-        action_row2.addWidget(self.export_btn)
+        # 添加弹性空间，右对齐按钮
+        action_layout.addStretch(1)
         
-        action_layout.addLayout(action_row1)
-        action_layout.addLayout(action_row2)
+        control_layout.addLayout(action_layout)
         
-        action_progress_layout.addLayout(action_layout)
-        
-        # 进度区域
+        # --- 进度条区域 ---
         progress_layout = QVBoxLayout()
-        progress_layout.setSpacing(3)
+        progress_layout.setContentsMargins(0, 2, 0, 0)
+        progress_layout.setSpacing(1)  # 进度条和标签之间的间距最小化
         
-        self.progress_label = QLabel("就绪")
         self.progress_bar = QProgressBar()
         self.progress_bar.setValue(0)
-        
-        progress_layout.addWidget(self.progress_label)
+        self.progress_bar.setMinimumHeight(12)  # 设置进度条高度
+        self.progress_bar.setMaximumHeight(12)  # 确保进度条不会太高
         progress_layout.addWidget(self.progress_bar)
         
-        action_progress_layout.addLayout(progress_layout, 1)  # 让进度区域占用更多空间
+        self.progress_label = QLabel("就绪")
+        self.progress_label.setMinimumHeight(12)  # 设置状态标签高度
+        self.progress_label.setMaximumHeight(12)  # 确保状态标签不会太高
+        progress_layout.addWidget(self.progress_label)
         
-        control_layout.addLayout(action_progress_layout)
+        control_layout.addLayout(progress_layout)
         
+        # 添加控制区域到分割器
         splitter.addWidget(control_widget)
         
         # === 结果显示区域 ===
@@ -244,6 +336,7 @@ class BruteforcePanel(QWidget):
         self.result_table.horizontalHeader().setSectionResizeMode(5, QHeaderView.ResizeToContents)
         # 设置更紧凑的行高
         self.result_table.verticalHeader().setDefaultSectionSize(22)
+        self.result_table.verticalHeader().setVisible(False)  # 隐藏垂直表头以节省空间
         result_tabs.addTab(self.result_table, "扫描结果")
         
         # 详细信息标签页
@@ -254,7 +347,7 @@ class BruteforcePanel(QWidget):
         splitter.addWidget(result_tabs)
         
         # 设置分割比例
-        splitter.setSizes([300, 600])
+        splitter.setSizes([200, 500])  # 控制区域更紧凑，结果区域更大
         main_layout.addWidget(splitter)
     
     def setup_connections(self):
@@ -275,6 +368,9 @@ class BruteforcePanel(QWidget):
         
         # 结果表格点击事件
         self.result_table.itemSelectionChanged.connect(self.update_detail_view)
+        
+        # 模式选择事件
+        self.mode_combo.currentIndexChanged.connect(self.switch_mode)
     
     def load_service_types(self):
         """加载支持的服务类型到下拉框"""
@@ -364,9 +460,8 @@ class BruteforcePanel(QWidget):
             for idx, cred in enumerate(target_data["credentials"], 1):
                 username = cred.get("username", "")
                 password = cred.get("password", "")
-                time_found = cred.get("time", "")
-                # 直接使用字符串时间，不再尝试转换
-                time_str = time_found if time_found else ""
+                time_found = cred.get("time", 0)
+                time_str = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time_found)) if time_found else ""
                 
                 detail_lines.append(f"{idx}. 用户名: {username}")
                 detail_lines.append(f"   密码: {password}")
@@ -464,33 +559,61 @@ class BruteforcePanel(QWidget):
         except Exception as e:
             QMessageBox.critical(self, "加载失败", f"加载密码文件时出错: {str(e)}")
     
+    def switch_mode(self):
+        """根据选择的模式切换UI"""
+        mode = self.mode_combo.currentData()
+        
+        if mode == "network":
+            # 网段扫描模式
+            self.target_input.setPlaceholderText("输入网段，例如: 192.168.1.0/24, 10.0.0.1-10.0.0.100")
+            self.scan_options_group.setVisible(True)
+        else:
+            # 单一目标模式
+            self.target_input.setPlaceholderText("输入目标主机，多个目标用逗号分隔")
+            self.scan_options_group.setVisible(False)
+
     def get_scan_config(self) -> Dict[str, Any]:
         """获取扫描配置"""
-        # 处理目标列表
-        targets_text = self.target_input.text().strip()
-        targets = [t.strip() for t in targets_text.split(',') if t.strip()]
+        # 扫描模式
+        mode = self.mode_combo.currentData()
         
-        # 处理用户名列表
-        usernames_text = self.username_input.text().strip()
-        usernames = [u.strip() for u in usernames_text.split(',') if u.strip()]
-        
-        # 处理密码列表
-        passwords_text = self.password_input.text().strip()
-        passwords = [p.strip() for p in passwords_text.split(',') if p.strip()]
+        # 解析目标
+        targets = self.target_input.text().strip()
         
         # 获取服务类型
         service_type = self.service_combo.currentData()
         
-        return {
+        # 解析用户名列表
+        username_text = self.username_input.text().strip()
+        username_list = []
+        if username_text:
+            username_list = [u.strip() for u in username_text.split(',') if u.strip()]
+        
+        # 解析密码列表
+        password_text = self.password_input.text().strip()
+        password_list = []
+        if password_text:
+            password_list = [p.strip() for p in password_text.split(',') if p.strip()]
+        
+        # 构造配置
+        config = {
+            'mode': mode,
             'targets': targets,
             'service_type': service_type,
             'port': self.port_input.value(),
-            'username_list': usernames,
-            'password_list': passwords,
+            'username_list': username_list,
+            'password_list': password_list,
             'threads': self.threads_input.value(),
             'timeout': self.timeout_input.value(),
             'stop_on_success': self.stop_on_success_check.isChecked()
         }
+        
+        # 网段扫描模式的特殊配置
+        if mode == "network":
+            config['service_detection'] = self.service_detection_check.isChecked()
+            config['only_brute_open'] = self.only_brute_open_check.isChecked()
+        
+        return config
     
     def validate_config(self, config: Dict[str, Any]) -> bool:
         """验证扫描配置"""
@@ -536,19 +659,58 @@ class BruteforcePanel(QWidget):
         if not self.validate_config(config):
             return
         
-        # 显示扫描任务大小的警告信息
-        task_size = len(config['targets']) * len(config['username_list']) * len(config['password_list'])
-        if task_size > 10000:
+        # 如果是网段扫描模式，需要解析网段
+        if config['mode'] == "network":
+            # 导入网络工具模块
+            from utils.network import parse_ip_range, is_port_open
+            
+            # 解析IP范围
+            ip_list = parse_ip_range(config['targets'])
+            if not ip_list:
+                QMessageBox.warning(self, "配置错误", "无法解析网段，请检查输入格式")
+                return
+            
+            total_ips = len(ip_list)
+            
+            # 显示扫描任务大小的警告信息
+            if config['service_detection']:
+                warning_text = f"您将扫描 {total_ips} 个IP地址，并对开放服务进行爆破。"
+            else:
+                task_size = total_ips * len(config['username_list']) * len(config['password_list'])
+                warning_text = f"您将对 {total_ips} 个IP地址进行爆破，共 {task_size} 个凭据组合，可能需要较长时间。"
+            
             reply = QMessageBox.question(
                 self,
                 "扫描任务确认",
-                f"您的扫描任务将尝试 {task_size} 个凭据组合，可能需要较长时间。是否继续？",
+                f"{warning_text}是否继续？",
                 QMessageBox.Yes | QMessageBox.No,
                 QMessageBox.No
             )
             
             if reply == QMessageBox.No:
                 return
+            
+            # 使用字符串形式的IP列表
+            config['targets'] = ip_list
+        else:
+            # 单一目标模式，可能有多个目标（逗号分隔）
+            if ',' in config['targets']:
+                targets = [t.strip() for t in config['targets'].split(',') if t.strip()]
+                config['targets'] = targets
+                
+                # 显示扫描任务大小的警告信息
+                task_size = len(targets) * len(config['username_list']) * len(config['password_list'])
+                if task_size > 10000:
+                    reply = QMessageBox.question(
+                        self,
+                        "扫描任务确认",
+                        f"您的扫描任务将尝试 {task_size} 个凭据组合，可能需要较长时间。是否继续？",
+                        QMessageBox.Yes | QMessageBox.No,
+                        QMessageBox.No
+                    )
+                    
+                    if reply == QMessageBox.No:
+                        return
         
         # 清空结果
         self.clear_results()
@@ -571,7 +733,7 @@ class BruteforcePanel(QWidget):
         # 启动线程
         self.scan_thread.start()
         
-        self.logger.info(f"开始爆破扫描，目标数: {len(config['targets'])}, 用户名数: {len(config['username_list'])}, 密码数: {len(config['password_list'])}")
+        self.logger.info(f"开始{config['mode'] == 'network' and '网段' or ''}爆破扫描，目标数: {len(config['targets']) if isinstance(config['targets'], list) else 1}, 用户名数: {len(config['username_list'])}, 密码数: {len(config['password_list'])}")
     
     def stop_scan(self):
         """停止爆破扫描"""
@@ -712,8 +874,8 @@ class BruteforcePanel(QWidget):
                     for cred in item["credentials"]:
                         username = cred.get("username", "")
                         password = cred.get("password", "")
-                        time_found = cred.get("time", "")
-                        time_str = time_found if time_found else ""
+                        time_found = cred.get("time", 0)
+                        time_str = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time_found)) if time_found else ""
                         
                         writer.writerow([target, service, port, status, username, password, time_str, f"{duration:.2f}"])
                 else:

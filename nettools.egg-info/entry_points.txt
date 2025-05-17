@@ -1,4 +1,4 @@
 [console_scripts]
-ss0t-scna-cli = cli.main:main
-ss0t-scna-gui = gui.main:main
+nettools-cli = cli.main:main
+nettools-gui = gui.main:main
 

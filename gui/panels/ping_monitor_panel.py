@@ -19,6 +19,7 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtCore import Qt, QDateTime, QTimer
 from PyQt5.QtGui import QColor, QFont, QPainter, QBrush
+from PyQt5.QtWidgets import QApplication
 
 from gui.panels.base_panel import BasePanel, ScanThread
 from utils.network import is_valid_ip, parse_ip_range
@@ -428,59 +429,32 @@ class PingMonitorPanel(BasePanel):
     
     def stop_scan(self) -> None:
         """停止监控（覆盖基类方法）"""
-        # 确保在任何情况下都停止监控
-        self.monitoring = False
+        self.logger.info(f"UI 请求停止 {self.MODULE_NAME} 监控...")
+        
+        self.monitoring = False 
         self.monitor_timer.stop()
-        
-        # 恢复界面状态
-        self.scan_button.setEnabled(True)
+
+        self.status_label.setText("正在停止监控...")
+        QApplication.processEvents() 
+
         self.stop_button.setEnabled(False)
-        self.clear_button.setEnabled(True)
+
+        if hasattr(self, 'scan_thread') and self.scan_thread and self.scan_thread.isRunning():
+            self.logger.info(f"ScanThread (QThread) 仍在运行，请求其管理的scanner停止...")
+            if self.scan_thread.scanner:
+                self.scan_thread.scanner.stop() 
+        else:
+            self.logger.info(f"ScanThread (QThread) 未运行或已停止。可能已提前完成或被停止。")
+            if hasattr(self, 'scan_thread') and self.scan_thread and self.scan_thread.scanner:
+                self.logger.info("尝试直接停止核心扫描器 (以防万一)")
+                self.scan_thread.scanner.stop()
+
+            self.scan_button.setEnabled(True)
+            self.clear_button.setEnabled(True)
+            self.export_button.setEnabled(self.current_result and self.current_result.success and len(self.current_result.data) > 0)
+            self.status_label.setText("监控已停止。")
         
-        # 如果没有扫描线程，直接返回
-        if not hasattr(self, 'scan_thread') or self.scan_thread is None:
-            self.status_label.setText("监控已停止")
-            return
-            
-        try:
-            # 停止扫描器
-            if self.scan_thread.isRunning():
-                scanner = self.scan_thread.scanner
-                
-                # 获取当前结果
-                try:
-                    results = scanner.get_results()
-                    analysis = scanner.analyze_results()
-                    
-                    # 停止扫描
-                    scanner.stop()
-                    
-                    # 等待线程结束
-                    self.scan_thread.wait(1000)  # 等待最多1秒
-                    
-                    # 更新状态栏
-                    self.status_label.setText(f"监控已停止，共收集了 {len(results)} 条记录")
-                    self.export_button.setEnabled(True)
-                    
-                    # 如果有结果，显示分析结果
-                    if results:
-                        self.display_monitor_results(analysis)
-                    
-                    self.logger.info(f"监控已停止，记录数: {len(results)}")
-                except Exception as e:
-                    # 如果获取结果时出错，仍然尝试停止扫描
-                    try:
-                        scanner.stop()
-                    except:
-                        pass
-                    
-                    self.logger.error(f"停止监控时获取结果出错: {str(e)}")
-                    self.status_label.setText("监控已停止，但获取结果时出错")
-            else:
-                self.status_label.setText("监控已停止")
-        except Exception as e:
-            self.logger.error(f"停止监控时出错: {str(e)}")
-            self.status_label.setText("监控已停止，但过程中出现错误")
+        self.logger.info(f"{self.MODULE_NAME} stop_scan 方法执行完毕。等待 on_scan_complete 或 on_scan_error。")
     
     def update_monitor_status(self):
         """更新监控状态"""
@@ -773,7 +747,7 @@ class PingMonitorPanel(BasePanel):
         self.status_label.setText(
             f"监控完成: 检查了 {host_count} 台主机，"
             f"共执行 {total_checks} 次检查，"
-            f"用时 {result.duration:.2f} 秒"
+            f"用时 {self.current_result.duration:.2f} 秒"
         )
     
     def display_monitor_records(self, records):
@@ -857,7 +831,9 @@ class PingMonitorPanel(BasePanel):
                 return
         
         # 对于其他情况，使用基类处理方式
-        super().on_scan_complete(result)
+        # Attempt to resolve Pylance "undefined 'result'" error by using an alias
+        result_for_super = result
+        super().on_scan_complete(result_for_super)
 
     def keyPressEvent(self, event):
         """

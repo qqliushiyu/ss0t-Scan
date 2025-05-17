@@ -14,7 +14,7 @@ from PyQt5.QtWidgets import (
     QLineEdit, QPushButton, QTableWidget, QTableWidgetItem,
     QComboBox, QCheckBox, QFileDialog, QLabel, QSpinBox,
     QRadioButton, QButtonGroup, QMessageBox, QHeaderView,
-    QGridLayout, QWidget
+    QGridLayout, QWidget, QProgressBar
 )
 
 from gui.panels.base_panel import BasePanel, ScanThread
@@ -39,15 +39,20 @@ class WebDirScanPanel(BasePanel):
     
     def create_param_group(self):
         """创建参数组"""
-        self.param_group = QGroupBox("扫描参数")
+        # 创建水平布局来放置左右两个参数组
+        params_layout = QHBoxLayout()
+        params_layout.setSpacing(2)  # 减小组件间间距
         
-        # 使用网格布局替代表单布局，以更有效地利用空间
-        layout = QGridLayout()
-        layout.setVerticalSpacing(4)  # 进一步减少垂直间距
-        layout.setHorizontalSpacing(5)  # 减少水平间距 
-        layout.setContentsMargins(5, 5, 5, 5)  # 减少边距
+        # === 左侧基本参数组 ===
+        self.basic_params_group = QGroupBox("基本参数")
+        basic_layout = QVBoxLayout(self.basic_params_group)
+        basic_layout.setContentsMargins(5, 8, 5, 5)  # 减小边距
+        basic_layout.setSpacing(3)  # 减小垂直间距
         
-        # ===== 第1行：目标类型和URL输入框放在同一行 =====
+        # ----- 第1行：目标类型和URL输入框 -----
+        target_layout = QHBoxLayout()
+        target_layout.setSpacing(2)  # 减小水平间距
+        
         # 目标选择：单一URL或批量URL文件
         self.target_type_group = QButtonGroup(self)
         self.single_url_radio = QRadioButton("单一")
@@ -59,191 +64,249 @@ class WebDirScanPanel(BasePanel):
         self.batch_url_radio.toggled.connect(self.toggle_target_type)
         self.target_type_group.addButton(self.batch_url_radio)
         
-        # 创建一个水平布局放置单选按钮和标签
-        target_type_layout = QHBoxLayout()
-        target_type_layout.setSpacing(2)  # 减少按钮间距
-        target_type_layout.addWidget(QLabel("目标:"))
-        target_type_layout.addWidget(self.single_url_radio)
-        target_type_layout.addWidget(self.batch_url_radio)
+        target_type_container = QHBoxLayout()
+        target_type_container.setSpacing(2)
+        target_type_container.addWidget(QLabel("目标:"))
+        target_type_container.addWidget(self.single_url_radio)
+        target_type_container.addWidget(self.batch_url_radio)
+        target_type_container.addStretch(1)
         
-        # 放置在第1行第1列
-        layout.addLayout(target_type_layout, 0, 0)
+        target_layout.addLayout(target_type_container)
         
-        # 目标URL输入，放在第1行第2-4列
+        # 目标URL输入
         self.target_input = QLineEdit()
         self.target_input.setPlaceholderText("http://example.com")
-        layout.addWidget(self.target_input, 0, 1, 1, 3)
+        self.target_input.setMinimumHeight(22)  # 统一控件高度
         
-        # ===== 第2行：URL文件输入框和浏览按钮 =====
-        # URL文件选择，放在第2行
+        url_layout = QHBoxLayout()
+        url_layout.setSpacing(0)
+        url_layout.addWidget(self.target_input)
+        
+        basic_layout.addLayout(target_layout)
+        basic_layout.addLayout(url_layout)
+        
+        # ----- 第2行：URL文件选择 -----
         url_file_layout = QHBoxLayout()
         url_file_layout.setSpacing(2)
-        url_file_layout.addWidget(QLabel("文件:"))
+        
+        file_label = QLabel("文件:")
+        file_label.setFixedWidth(30)  # 统一标签宽度
+        url_file_layout.addWidget(file_label)
         
         self.url_file_input = QLineEdit()
         self.url_file_input.setPlaceholderText("URL列表文件")
         self.url_file_input.setEnabled(False)
+        self.url_file_input.setMinimumHeight(22)  # 统一控件高度
         url_file_layout.addWidget(self.url_file_input)
         
         self.browse_url_button = QPushButton("浏览")
-        self.browse_url_button.setFixedWidth(40)  # 减小按钮宽度
+        self.browse_url_button.setFixedWidth(40)
+        self.browse_url_button.setFixedHeight(22)  # 统一按钮高度
         self.browse_url_button.clicked.connect(self.browse_url_file)
         self.browse_url_button.setEnabled(False)
         url_file_layout.addWidget(self.browse_url_button)
         
-        layout.addLayout(url_file_layout, 1, 0, 1, 4)
+        basic_layout.addLayout(url_file_layout)
         
-        # ===== 第3行：字典文件输入框和浏览按钮 =====
+        # ----- 第3行：字典文件选择 -----
         dict_file_layout = QHBoxLayout()
         dict_file_layout.setSpacing(2)
-        dict_file_layout.addWidget(QLabel("字典:"))
+        
+        dict_label = QLabel("字典:")
+        dict_label.setFixedWidth(30)  # 统一标签宽度
+        dict_file_layout.addWidget(dict_label)
         
         self.dict_file_input = QLineEdit()
         self.dict_file_input.setPlaceholderText("使用内置字典")
+        self.dict_file_input.setMinimumHeight(22)  # 统一控件高度
         dict_file_layout.addWidget(self.dict_file_input)
         
         self.browse_button = QPushButton("浏览")
-        self.browse_button.setFixedWidth(40)  # 减小按钮宽度
+        self.browse_button.setFixedWidth(40)
+        self.browse_button.setFixedHeight(22)  # 统一按钮高度
         self.browse_button.clicked.connect(self.browse_dict_file)
         dict_file_layout.addWidget(self.browse_button)
         
-        layout.addLayout(dict_file_layout, 2, 0, 1, 4)
+        basic_layout.addLayout(dict_file_layout)
         
-        # ===== 第4行：线程数、超时和延迟都放在同一行 =====
-        params_layout = QHBoxLayout()
-        params_layout.setSpacing(8)  # 参数组之间稍微留些间距
+        # ----- 第4行：线程数、超时和延迟 -----
+        params_container = QHBoxLayout()
+        params_container.setSpacing(8)  # 参数组之间保持一定间距
         
         # 线程数输入
         thread_layout = QHBoxLayout()
         thread_layout.setSpacing(2)
-        thread_layout.addWidget(QLabel("线程:"))
+        thread_label = QLabel("线程:")
+        thread_label.setFixedWidth(30)  # 统一标签宽度
+        thread_layout.addWidget(thread_label)
+        
         self.threads_input = QSpinBox()
         self.threads_input.setRange(1, 50)
         self.threads_input.setValue(10)
-        self.threads_input.setFixedWidth(45)  # 减小控件宽度
+        self.threads_input.setFixedWidth(45)
+        self.threads_input.setFixedHeight(22)  # 统一控件高度
         thread_layout.addWidget(self.threads_input)
-        params_layout.addLayout(thread_layout)
+        params_container.addLayout(thread_layout)
         
         # 超时设置
         timeout_layout = QHBoxLayout()
         timeout_layout.setSpacing(2)
-        timeout_layout.addWidget(QLabel("超时:"))
+        timeout_label = QLabel("超时:")
+        timeout_label.setFixedWidth(30)  # 统一标签宽度
+        timeout_layout.addWidget(timeout_label)
+        
         self.timeout_input = QSpinBox()
         self.timeout_input.setRange(1, 60)
         self.timeout_input.setValue(10)
-        self.timeout_input.setFixedWidth(45)  # 减小控件宽度
+        self.timeout_input.setFixedWidth(45)
+        self.timeout_input.setFixedHeight(22)  # 统一控件高度
         timeout_layout.addWidget(self.timeout_input)
-        params_layout.addLayout(timeout_layout)
+        params_container.addLayout(timeout_layout)
         
         # 延迟设置
         delay_layout = QHBoxLayout()
         delay_layout.setSpacing(2)
-        delay_layout.addWidget(QLabel("延迟:"))
+        delay_label = QLabel("延迟:")
+        delay_label.setFixedWidth(30)  # 统一标签宽度
+        delay_layout.addWidget(delay_label)
+        
         self.delay_input = QSpinBox()
         self.delay_input.setRange(0, 1000)
         self.delay_input.setValue(0)
-        self.delay_input.setFixedWidth(45)  # 减小控件宽度
+        self.delay_input.setFixedWidth(45)
+        self.delay_input.setFixedHeight(22)  # 统一控件高度
         delay_layout.addWidget(self.delay_input)
-        params_layout.addLayout(delay_layout)
+        params_container.addLayout(delay_layout)
         
-        # 添加到网格布局
-        layout.addLayout(params_layout, 3, 0, 1, 4)
+        # 添加弹性空间
+        params_container.addStretch(1)
         
-        # ===== 第5行：扩展名 =====
+        basic_layout.addLayout(params_container)
+        
+        # === 右侧扫描选项组 ===
+        self.scan_options_group = QGroupBox("扫描选项")
+        options_layout = QVBoxLayout(self.scan_options_group)
+        options_layout.setContentsMargins(5, 8, 5, 5)  # 减小边距
+        options_layout.setSpacing(3)  # 减小垂直间距
+        
+        # ----- 扩展名 -----
         ext_layout = QHBoxLayout()
         ext_layout.setSpacing(2)
-        ext_layout.addWidget(QLabel("扩展:"))
+        
+        ext_label = QLabel("扩展:")
+        ext_label.setFixedWidth(36)  # 统一标签宽度
+        ext_layout.addWidget(ext_label)
+        
         self.extensions_input = QLineEdit()
         self.extensions_input.setPlaceholderText("php,asp,aspx,jsp")
+        self.extensions_input.setMinimumHeight(22)  # 统一控件高度
         ext_layout.addWidget(self.extensions_input)
         
-        layout.addLayout(ext_layout, 4, 0, 1, 4)
+        options_layout.addLayout(ext_layout)
         
-        # ===== 第6行：状态码过滤 =====
+        # ----- 状态码过滤 -----
         status_layout = QHBoxLayout()
-        status_layout.setSpacing(5)
-        status_layout.addWidget(QLabel("状态:"))
+        status_layout.setSpacing(2)
         
-        # 创建状态码复选框，使用更紧凑的布局
-        status_codes_layout = QHBoxLayout()
-        status_codes_layout.setSpacing(10)  # 增加各个复选框之间的间距
+        status_label = QLabel("状态:")
+        status_label.setFixedWidth(36)  # 统一标签宽度
+        status_layout.addWidget(status_label)
         
+        # 创建状态码复选框网格
+        status_grid = QGridLayout()
+        status_grid.setSpacing(5)
+        status_grid.setContentsMargins(0, 0, 0, 0)
+        
+        # 第一行状态码
         self.code200_checkbox = QCheckBox("200")
         self.code200_checkbox.setChecked(True)
-        status_codes_layout.addWidget(self.code200_checkbox)
+        status_grid.addWidget(self.code200_checkbox, 0, 0)
         
         self.code201_checkbox = QCheckBox("201")
         self.code201_checkbox.setChecked(True)
-        status_codes_layout.addWidget(self.code201_checkbox)
+        status_grid.addWidget(self.code201_checkbox, 0, 1)
         
         self.code301_checkbox = QCheckBox("301")
         self.code301_checkbox.setChecked(True)
-        status_codes_layout.addWidget(self.code301_checkbox)
+        status_grid.addWidget(self.code301_checkbox, 0, 2)
         
+        # 第二行状态码
         self.code302_checkbox = QCheckBox("302")
         self.code302_checkbox.setChecked(True)
-        status_codes_layout.addWidget(self.code302_checkbox)
+        status_grid.addWidget(self.code302_checkbox, 1, 0)
         
         self.code403_checkbox = QCheckBox("403")
-        status_codes_layout.addWidget(self.code403_checkbox)
+        status_grid.addWidget(self.code403_checkbox, 1, 1)
         
         self.code404_checkbox = QCheckBox("404")
-        status_codes_layout.addWidget(self.code404_checkbox)
+        status_grid.addWidget(self.code404_checkbox, 1, 2)
         
-        status_layout.addLayout(status_codes_layout)
-        status_layout.addStretch(1)
+        status_codes_container = QVBoxLayout()
+        status_codes_container.addLayout(status_grid)
+        status_layout.addLayout(status_codes_container)
         
-        layout.addLayout(status_layout, 5, 0, 1, 4)
+        options_layout.addLayout(status_layout)
         
-        # ===== 第7行：重定向和高级选项合并在一行 =====
-        options_layout = QHBoxLayout()
-        options_layout.setSpacing(15)  # 选项之间的间距
+        # ----- 其他选项 -----
+        other_options = QVBoxLayout()
+        other_options.setSpacing(2)
         
         # 跟随重定向
         self.follow_redirects_checkbox = QCheckBox("跟随重定向")
         self.follow_redirects_checkbox.setChecked(True)
-        options_layout.addWidget(self.follow_redirects_checkbox)
+        other_options.addWidget(self.follow_redirects_checkbox)
         
-        # 高级选项按钮
+        # 高级选项展开按钮
+        advanced_btn_layout = QHBoxLayout()
+        advanced_btn_layout.setSpacing(2)
+        
         self.advanced_button = QPushButton("高级选项")
         self.advanced_button.setCheckable(True)
-        self.advanced_button.setFixedWidth(80)
+        self.advanced_button.setFixedHeight(22)  # 统一按钮高度
         self.advanced_button.clicked.connect(self.toggle_advanced_options)
-        options_layout.addWidget(self.advanced_button)
+        advanced_btn_layout.addWidget(self.advanced_button)
+        advanced_btn_layout.addStretch(1)
         
-        options_layout.addStretch(1)
+        other_options.addLayout(advanced_btn_layout)
         
-        layout.addLayout(options_layout, 6, 0, 1, 4)
+        options_layout.addLayout(other_options)
         
-        # ===== 高级选项区域 =====
+        # ----- 高级选项区域 -----
         self.advanced_widget = QWidget()
         advanced_layout = QFormLayout(self.advanced_widget)
-        advanced_layout.setVerticalSpacing(4)
-        advanced_layout.setContentsMargins(0, 0, 0, 0)
+        advanced_layout.setVerticalSpacing(3)
+        advanced_layout.setContentsMargins(2, 2, 2, 2)
         
         # User-Agent
         self.user_agent_input = QLineEdit()
         self.user_agent_input.setText(config_manager.get("web_scan", "user_agent"))
+        self.user_agent_input.setMinimumHeight(22)  # 统一控件高度
         advanced_layout.addRow("User-Agent:", self.user_agent_input)
         
         # Cookies
         self.cookies_input = QLineEdit()
         self.cookies_input.setPlaceholderText("name1=value1; name2=value2")
+        self.cookies_input.setMinimumHeight(22)  # 统一控件高度
         advanced_layout.addRow("Cookies:", self.cookies_input)
         
         # 认证
         self.auth_input = QLineEdit()
         self.auth_input.setPlaceholderText("username:password")
+        self.auth_input.setMinimumHeight(22)  # 统一控件高度
         advanced_layout.addRow("认证:", self.auth_input)
         
         # 默认隐藏高级选项
         self.advanced_widget.setVisible(False)
         
-        # 添加高级选项到布局
-        layout.addWidget(self.advanced_widget, 7, 0, 1, 4)
+        options_layout.addWidget(self.advanced_widget)
+        options_layout.addStretch(1)  # 添加弹性空间，保持紧凑
         
-        self.param_group.setLayout(layout)
-        self.config_layout.addWidget(self.param_group)
+        # 将左右参数组添加到参数布局
+        params_layout.addWidget(self.basic_params_group, 3)  # 基本参数占比更大
+        params_layout.addWidget(self.scan_options_group, 2)  # 扫描选项占比较小
+        
+        # 将布局设置到配置区域
+        self.config_layout.addLayout(params_layout)
     
     def toggle_target_type(self):
         """切换目标类型"""
@@ -893,30 +956,30 @@ class WebDirScanPanel(BasePanel):
         action_layout.setSpacing(5)  # 减少按钮间距
         
         # 创建统一大小的按钮
-        button_width = 70  # 减小按钮宽度
+        button_height = 25  # 统一按钮高度
         
         # 扫描按钮
         self.scan_button = QPushButton("开始扫描")
-        self.scan_button.setFixedWidth(button_width)
+        self.scan_button.setFixedHeight(button_height)
         self.scan_button.clicked.connect(self.start_scan)
         action_layout.addWidget(self.scan_button)
         
         # 停止按钮
         self.stop_button = QPushButton("停止")
-        self.stop_button.setFixedWidth(button_width)
+        self.stop_button.setFixedHeight(button_height)
         self.stop_button.clicked.connect(self.stop_scan)
         self.stop_button.setEnabled(False)
         action_layout.addWidget(self.stop_button)
         
         # 清空按钮
         self.clear_button = QPushButton("清空")
-        self.clear_button.setFixedWidth(button_width)
+        self.clear_button.setFixedHeight(button_height)
         self.clear_button.clicked.connect(self.clear_results)
         action_layout.addWidget(self.clear_button)
         
         # 导出按钮
-        self.export_button = QPushButton("导出")
-        self.export_button.setFixedWidth(button_width)
+        self.export_button = QPushButton("导出报告")
+        self.export_button.setFixedHeight(button_height)
         self.export_button.clicked.connect(self.export_results)
         self.export_button.setEnabled(False)
         action_layout.addWidget(self.export_button)
@@ -924,4 +987,28 @@ class WebDirScanPanel(BasePanel):
         # 添加弹性空间
         action_layout.addStretch(1)
         
-        self.config_layout.addLayout(action_layout) 
+        # 设置最小高度，使布局紧凑
+        action_widget = QWidget()
+        action_widget.setLayout(action_layout)
+        action_widget.setMinimumHeight(button_height + 4)  # 仅留少量边距
+        
+        self.config_layout.addWidget(action_widget)
+        
+        # 添加进度条
+        progress_layout = QVBoxLayout()
+        progress_layout.setContentsMargins(0, 0, 0, 0)
+        progress_layout.setSpacing(1)  # 减小进度条和标签间的间距
+        
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setRange(0, 100)
+        self.progress_bar.setValue(0)
+        self.progress_bar.setMinimumHeight(12)  # 设置进度条高度
+        self.progress_bar.setMaximumHeight(12)  # 确保进度条不会过高
+        progress_layout.addWidget(self.progress_bar)
+        
+        self.status_label = QLabel("就绪")
+        self.status_label.setMinimumHeight(12)  # 设置状态标签高度
+        self.status_label.setMaximumHeight(12)  # 确保状态标签不会过高
+        progress_layout.addWidget(self.status_label)
+        
+        self.config_layout.addLayout(progress_layout) 

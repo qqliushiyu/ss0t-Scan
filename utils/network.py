@@ -77,12 +77,53 @@ def parse_ip_range(ip_range: str) -> List[str]:
     # 范围表示法 (192.168.1.1-192.168.1.10)
     if '-' in ip_range:
         try:
-            start_ip, end_ip = ip_range.split('-')
-            if not is_valid_ip(start_ip) or not is_valid_ip(end_ip):
+            parts = ip_range.split('-')
+            if len(parts) != 2: #确保是单一的 '-' 分割
                 return []
             
-            start_int = int(ipaddress.IPv4Address(start_ip))
-            end_int = int(ipaddress.IPv4Address(end_ip))
+            start_ip_str = parts[0].strip()
+            end_part_str = parts[1].strip()
+
+            if not is_valid_ip(start_ip_str):
+                return []
+
+            end_ip_str = ""
+            if is_valid_ip(end_part_str):
+                end_ip_str = end_part_str
+            else:
+                # 尝试将 end_part_str 作为 start_ip_str 的最后一部分
+                try:
+                    end_octet = int(end_part_str)
+                    if not (0 <= end_octet <= 255):
+                        return [] # 无效的最后八位字节
+                    
+                    start_ip_parts = start_ip_str.split('.')
+                    if len(start_ip_parts) != 4:
+                        return [] # start_ip_str 格式不正确
+
+                    # 检查 start_ip 的最后一部分是否小于 end_octet (对于 X.X.X.A-B 形式)
+                    # 或者 start_ip 本身是否小于 end_ip (对于 X.X.X.A - Y.Y.Y.B 形式)
+                    # 这里我们先构造 end_ip_str，后续的比较由 ipaddress 库处理
+                    end_ip_str = f"{start_ip_parts[0]}.{start_ip_parts[1]}.{start_ip_parts[2]}.{end_octet}"
+                    
+                    # 确保构造出的 end_ip_str 是有效的
+                    if not is_valid_ip(end_ip_str):
+                         return [] # 构造出的 IP 仍然无效
+
+                except ValueError: # end_part_str 不是纯数字
+                    return []
+
+            if not end_ip_str: # 如果 end_ip_str 最终还是空的
+                return []
+
+            start_ip_obj = ipaddress.IPv4Address(start_ip_str)
+            end_ip_obj = ipaddress.IPv4Address(end_ip_str)
+            
+            start_int = int(start_ip_obj)
+            end_int = int(end_ip_obj)
+
+            if start_int > end_int: # 确保起始IP不大于结束IP
+                return []
             
             return [str(ipaddress.IPv4Address(ip)) for ip in range(start_int, end_int + 1)]
         except (ValueError, TypeError):

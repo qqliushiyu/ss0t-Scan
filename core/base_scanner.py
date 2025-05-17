@@ -10,16 +10,25 @@ import abc
 import logging
 import time
 import uuid
+import os
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Dict, List, Any, Optional, Union, Tuple, Callable
+
+# 获取项目根目录的绝对路径
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+
+# 确保logs目录存在
+LOGS_DIR = os.path.join(PROJECT_ROOT, "logs")
+if not os.path.exists(LOGS_DIR):
+    os.makedirs(LOGS_DIR)
 
 # 配置日志格式
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('logs/scanner.log'),
+        logging.FileHandler(os.path.join(LOGS_DIR, 'scanner.log'), encoding='utf-8'),
         logging.StreamHandler()
     ]
 )

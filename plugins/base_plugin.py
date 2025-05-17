@@ -20,7 +20,7 @@ class WebRiskPlugin(abc.ABC):
     NAME = "基础插件"
     DESCRIPTION = "Web风险扫描插件基类"
     VERSION = "1.0.0"
-    AUTHOR = "ss0t-scna"
+    AUTHOR = "NetTools"
     CATEGORY = "安全"  # 可以是"漏洞检测", "信息收集", "安全配置", "指纹识别"等
     
     def __init__(self, config: Dict[str, Any] = None):
@@ -33,6 +33,7 @@ class WebRiskPlugin(abc.ABC):
         self.config = config or {}
         self.logger = logging.getLogger(f"plugins.web_risk.{self.__class__.__name__}")
         self._enabled = True
+        self._stopped = False
     
     @property
     def enabled(self) -> bool:
@@ -43,6 +44,19 @@ class WebRiskPlugin(abc.ABC):
     def enabled(self, value: bool) -> None:
         """设置插件启用状态"""
         self._enabled = value
+    
+    @property
+    def stopped(self) -> bool:
+        """获取插件停止状态"""
+        return self._stopped
+    
+    def stop(self) -> None:
+        """
+        停止插件的操作
+        子类可以重写此方法来实现特定的清理逻辑
+        """
+        self._stopped = True
+        self.logger.debug(f"插件 {self.NAME} 已接收停止信号")
     
     @abc.abstractmethod
     def check(self, target: str, session=None, **kwargs) -> List[Dict[str, Any]]:

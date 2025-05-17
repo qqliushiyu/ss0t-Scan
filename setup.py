@@ -83,10 +83,10 @@ if __name__ == "__main__":
 
 # 包信息
 setup(
-    name="ss0t-scna",
+    name="nettools",
     version="1.0.0",
     description="多模块网络扫描工具箱",
-    author="ss0t-scnaTeam",
+    author="NetTools Team",
     author_email="admin@example.com",
     packages=find_packages(),
     install_requires=[
@@ -97,8 +97,8 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'ss0t-scna-cli=cli.main:main',
-            'ss0t-scna-gui=gui.main:main',
+            'nettools-cli=cli.main:main',
+            'nettools-gui=gui.main:main',
         ],
     },
     python_requires='>=3.8',

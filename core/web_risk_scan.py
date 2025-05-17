@@ -20,6 +20,7 @@ import threading
 import multiprocessing
 from urllib3.exceptions import InsecureRequestWarning
 import urllib3
+import logging
 
 # 导入连接池管理器
 from requests.adapters import HTTPAdapter
@@ -124,6 +125,25 @@ class WebRiskScanner(BaseScanner):
     
     def __init__(self, config: Dict[str, Any] = None):
         """初始化Web风险扫描模块"""
+        # Set urllib3.connectionpool logger to ERROR to suppress connection timeout warnings
+        try:
+            urllib3_logger = logging.getLogger("urllib3.connectionpool")
+            if urllib3_logger: # Check if logger exists
+                urllib3_logger.setLevel(logging.ERROR)
+                # Also check if a handler is present and if its level is lower than ERROR
+                # This is an extra step, usually setting logger level is enough
+                for handler in urllib3_logger.handlers:
+                    if handler.level < logging.ERROR:
+                         handler.setLevel(logging.ERROR) # Ensure handler also respects the new level
+            # Fallback if specific logger not found, try to configure urllib3 globally, though less ideal
+            else: 
+                logging.getLogger("urllib3").setLevel(logging.ERROR)
+
+
+        except Exception as e:
+            # Use a generic logger if self.logger is not yet initialized
+            logging.getLogger(__name__).warning(f"Failed to set urllib3 log level: {e}")
+
         super().__init__(config)
         self._stopped = False
         self._scanned_urls = 0
@@ -517,8 +537,26 @@ class WebRiskScanner(BaseScanner):
                     verify=verify_ssl,
                     allow_redirects=follow_redirects
                 )
+                response.raise_for_status() # Check for HTTP errors (4xx or 5xx)
+
+            except requests.exceptions.ConnectTimeout as e:
+                self.logger.debug(f"连接 {url} 超时 (ConnectTimeout): {str(e)}")
+                return results # 返回已收集的结果，因为无法连接
+            except requests.exceptions.ConnectionError as e:
+                self.logger.debug(f"连接 {url} 失败 (ConnectionError): {str(e)}")
+                return results # 返回已收集的结果，因为无法连接
+            except requests.exceptions.Timeout as e: # Catches other timeouts like ReadTimeout
+                self.logger.warning(f"读取 {url} 内容超时 (Timeout): {str(e)}")
+                # 即使读取超时，也可能已经有部分结果（如headers），所以不立即返回
+                # 但后续依赖response对象的插件可能失败
+            except requests.exceptions.HTTPError as e:
+                self.logger.warning(f"访问 {url} 时发生HTTP错误: {e.response.status_code} - {e.response.reason}")
+                # HTTP错误意味着服务器有响应，可以继续尝试分析已有的response（如果有）
+            except requests.exceptions.RequestException as e:
+                self.logger.error(f"获取 {url} 内容时发生请求异常: {type(e).__name__} - {str(e)}")
+                return results
             except Exception as e:
-                self.logger.error(f"获取{url}内容时出错: {str(e)}")
+                self.logger.error(f"获取{url}内容时发生未知错误: {type(e).__name__} - {str(e)}", exc_info=True)
                 # 返回已收集的结果
                 return results
             
@@ -729,7 +767,7 @@ class WebRiskScanner(BaseScanner):
             扫描结果
         """
         if self._stopped:
-            return ScanResult(success=False, data=[], error_msg="扫描已停止")
+            return ScanResult(success=False, data=[], error_msg="扫描已提前停止")
         
         all_results = []
         start_time = time.time()
@@ -756,221 +794,97 @@ class WebRiskScanner(BaseScanner):
             }
             self.logger.info(f"开始Web风险扫描: {scan_info}")
             
-            # 第一步: 进行存活性检测
-            alive_urls = []
-            alive_results = {}  # 存储存活检测的基本结果，避免重复请求
-            status_code_stats = {}  # 记录不同状态码的统计
+            # 重置结果计数器
+            self.result_counts = {}
             
-            self.update_progress(5, f"正在检测目标存活性 (0/{self._total_urls})...")
-            self.logger.info(f"开始对 {self._total_urls} 个目标进行存活性检测...")
-            
-            with concurrent.futures.ThreadPoolExecutor(max_workers=thread_count) as executor:
-                # 提交存活检测任务
-                future_to_url = {executor.submit(self.check_url_alive, url): url for url in urls}
-                completed = 0
-                
-                # 处理存活检测结果
-                for future in concurrent.futures.as_completed(future_to_url):
-                    url = future_to_url[future]
-                    completed += 1
-                    progress = 5 + (completed / self._total_urls) * 25  # 存活检测占总进度的25%
-                    
-                    # 显示更详细的进度信息
-                    elapsed = time.time() - start_time
-                    remaining = (elapsed / completed) * (self._total_urls - completed) if completed > 0 else 0
-                    progress_msg = f"正在检测目标存活性 ({completed}/{self._total_urls}) - 已用时: {int(elapsed)}秒, 预计剩余: {int(remaining)}秒"
-                    
-                    self.update_progress(int(progress), progress_msg)
-                    
-                    try:
-                        is_alive, basic_result = future.result()
-                        
-                        # 记录状态码统计
-                        status_code = basic_result.get("status_code", 0)
-                        status_code_stats[status_code] = status_code_stats.get(status_code, 0) + 1
-                        
-                        if is_alive:
-                            alive_urls.append(url)
-                            if basic_result:
-                                alive_results[url] = basic_result
-                                # 记录响应时间，可用于后续分析
-                                response_time = basic_result.get("response_time", 0)
-                                if response_time > 0:
-                                    self.logger.debug(f"URL {url} 响应时间: {response_time}ms")
-                                
-                                # 只有存活的目标才添加到结果列表
-                                all_results.append(basic_result)
-                                self.add_result(basic_result)
-                        elif self.config.get("show_failed_targets", False):
-                            # 只有当配置允许显示失败目标时，才添加到结果列表
-                            all_results.append(basic_result)
-                            self.add_result(basic_result)
-                    except Exception as e:
-                        self.logger.error(f"检测URL {url} 存活性时出错: {str(e)}", exc_info=True)
-                        error_result = {
-                            "check_type": "error",
-                            "url": url,
-                            "error": str(e)
-                        }
-                        all_results.append(error_result)
-                        if self._result_callback:
-                            self._result_callback(error_result)
-                    
-                    # 检查是否已停止
+            # 确保在开始新扫描前，之前的执行器已关闭
+            if hasattr(self, '_executor') and self._executor:
+                if not self._executor._shutdown:
+                    self.logger.warning("检测到旧的线程池未关闭，正在尝试关闭...")
+                    self._executor.shutdown(wait=True, cancel_futures=True) # 等待关闭
+                self._executor = None # 显式置空
+
+            # 创建新的线程池
+            # 使用 with 语句确保线程池最终能关闭
+            with concurrent.futures.ThreadPoolExecutor(max_workers=thread_count, thread_name_prefix="WebScanWorker") as executor:
+                self._executor = executor # 保存引用，以便stop方法可以访问
+                futures_map = {}
+
+                # 1. 存活性检测 (如果需要)
+                # 这里假设存活性检测已经集成到scan_url或由插件处理
+                # 如果需要单独的存活性检测阶段，应在此处实现并检查self._stopped
+
+                # 2. 提交详细扫描任务
+                self.logger.info(f"开始对 {len(urls)} 个目标提交详细安全扫描任务...")
+                for url in urls:
                     if self._stopped:
-                        return ScanResult(success=False, data=all_results, error_msg="扫描已中止")
-            
-            # 更新存活的URL数量
-            alive_count = len(alive_urls)
-            alive_percent = (alive_count / self._total_urls) * 100 if self._total_urls > 0 else 0
-            self.logger.info(f"检测到 {alive_count}/{self._total_urls} 个目标存活 ({alive_percent:.1f}%)")
-            
-            # 输出状态码统计信息
-            self.logger.info("状态码统计:")
-            for status_code, count in sorted(status_code_stats.items()):
-                status_desc = ""
-                if 200 <= status_code < 300:
-                    status_desc = "成功响应"
-                elif 300 <= status_code < 400:
-                    status_desc = "重定向"
-                elif 400 <= status_code < 500:
-                    status_desc = "客户端错误"
-                elif 500 <= status_code < 600:
-                    status_desc = "服务器错误" 
-                elif status_code == 0:
-                    status_desc = "连接失败"
-                self.logger.info(f"  - 状态码 {status_code} ({status_desc}): {count} 个URL")
-            
-            if alive_count == 0:
-                elapsed = time.time() - start_time
-                self.update_progress(100, f"未发现存活目标，扫描完成 (总用时: {int(elapsed)}秒)")
-                self.logger.warning("未发现存活目标，扫描将终止")
-                return ScanResult(
-                    success=True,
-                    data=all_results,
-                    metadata={
-                        "target_urls": urls,
-                        "scan_config": self.config.copy(),
-                        "plugin_info": plugin_manager.get_plugin_info_list(),
-                        "status_code_stats": status_code_stats,
-                        "scan_time": int(elapsed)
-                    }
-                )
-            
-            # 第二步: 对存活的URL进行详细扫描
-            detail_scan_start = time.time()
-            self.update_progress(30, f"开始详细扫描 (0/{alive_count})...")
-            self.logger.info(f"开始对 {alive_count} 个存活目标进行详细安全扫描...")
-            self._total_urls = alive_count
-            self._scanned_urls = 0
-            
-            # 使用线程池并发扫描
-            with concurrent.futures.ThreadPoolExecutor(max_workers=thread_count) as executor:
-                # 提交所有任务，传递存活检测的基本结果
-                future_to_url = {}
-                for url in alive_urls:
-                    # 获取对应的基本结果，如果有的话
-                    basic_result = alive_results.get(url)
-                    # 提交任务，传递基本结果
-                    future = executor.submit(self.scan_url, url, basic_result)
-                    future_to_url[future] = url
+                        self.logger.info("扫描在任务提交阶段被停止")
+                        # 取消已提交但未开始的future
+                        # futures_map 的键是 Future 对象
+                        for future_obj in futures_map.keys(): 
+                            if isinstance(future_obj, concurrent.futures.Future):
+                                if not future_obj.done():
+                                    future_obj.cancel()
+                            else:
+                                # This case should ideally not happen if futures_map is populated correctly
+                                self.logger.error(f" futures_map 中发现意外的键类型: {type(future_obj)}. 无法取消。")
+                        break 
+                    
+                    future = executor.submit(self.scan_url, url)
+                    futures_map[future] = url # Key: Future, Value: URL
                 
-                self._futures = list(future_to_url.keys())
-                
-                # 处理结果
-                for future in concurrent.futures.as_completed(future_to_url):
-                    url = future_to_url[future]
-                    self._scanned_urls += 1
-                    progress = 30 + (self._scanned_urls / alive_count) * 70  # 详细扫描占总进度的70%
-                    
-                    # 更精确的进度显示
-                    elapsed = time.time() - detail_scan_start
-                    remaining = (elapsed / self._scanned_urls) * (alive_count - self._scanned_urls) if self._scanned_urls > 0 else 0
-                    total_elapsed = time.time() - start_time
-                    
-                    progress_msg = (
-                        f"详细扫描进度 ({self._scanned_urls}/{alive_count}) - "
-                        f"已用时: {int(total_elapsed)}秒, 预计剩余: {int(remaining)}秒"
-                    )
-                    
-                    self.update_progress(int(progress), progress_msg)
-                    
-                    try:
-                        url_results = future.result()
-                        all_results.extend(url_results)
-                    except Exception as e:
-                        self.logger.error(f"处理URL {url} 的详细扫描结果时出错: {str(e)}", exc_info=True)
-                        error_result = {
-                            "check_type": "error",
-                            "url": url,
-                            "error": str(e)
-                        }
-                        all_results.append(error_result)
-                        if self._result_callback:
-                            self._result_callback(error_result)
-                    
-                    # 检查是否已停止
+                # 等待任务完成
+                processed_count = 0
+                for future in concurrent.futures.as_completed(futures_map): # future here is a Future object from futures_map.keys()
                     if self._stopped:
+                        self.logger.info("扫描在等待任务完成阶段被停止")
+                        # 尝试取消剩余的future 
+                        # futures_map 的键是 Future 对象
+                        for future_obj in futures_map.keys(): # Iterate over Future objects
+                            if isinstance(future_obj, concurrent.futures.Future): # Redundant check, but safe
+                                if not future_obj.done():
+                                    future_obj.cancel()
+                            # else: # Should not be reached if map is {Future: URL}
+                                # self.logger.error(f"处理 futures_map 时发现意外的键类型: {type(future_obj)}. 无法取消。")
                         break
-            
-            # 计算总扫描时间
-            total_elapsed = time.time() - start_time
-            
-            # 生成扫描报告
-            if not self._stopped:
-                self.update_progress(100, f"扫描完成，总用时: {int(total_elapsed)}秒")
+
+                    url = futures_map[future] # Get URL using the completed Future object as key
+                    try:
+                        results = future.result()
+                        if results:
+                            all_results.extend(results)
+                    except concurrent.futures.CancelledError:
+                        self.logger.info(f"URL {url} 的扫描任务被取消。")
+                    except Exception as e:
+                        self.logger.error(f"URL {url} 扫描失败: {type(e).__name__} - {str(e)}", exc_info=False)
+                        self.add_result({"url": url, "check_type": "error", "error": str(e)})
+                    
+                    processed_count += 1
+                    progress_percent = (processed_count * 100) // self._total_urls
+                    self.update_progress(progress_percent, f"已处理 {processed_count}/{self._total_urls} 个目标")
                 
-                # 结果统计
-                result_types = {}
-                for result in all_results:
-                    check_type = result.get("check_type", "unknown")
-                    result_types[check_type] = result_types.get(check_type, 0) + 1
-                
-                # 添加元数据
-                metadata = {
-                    "target_urls": urls,
-                    "alive_urls": alive_urls,
-                    "scan_config": self.config.copy(),
-                    "plugin_info": plugin_manager.get_plugin_info_list(),
-                    "status_code_stats": status_code_stats,
-                    "result_types": result_types,
-                    "scan_time": int(total_elapsed),
-                    "summary": {
-                        "total_urls": len(urls),
-                        "alive_urls": len(alive_urls),
-                        "success_rate": round(len(alive_urls) / len(urls) * 100, 2) if urls else 0,
-                        "total_elapsed": int(total_elapsed),
-                        "scan_start_time": int(start_time),
-                        "scan_end_time": int(time.time())
-                    }
-                }
-                
-                self.logger.info(f"扫描完成，总用时: {int(total_elapsed)}秒")
-                self.logger.info(f"结果统计: {result_types}")
-                
-                return ScanResult(
-                    success=True,
-                    data=all_results,
-                    metadata=metadata
-                )
-            else:
-                self.update_progress(100, f"扫描已中止，已用时: {int(total_elapsed)}秒")
-                return ScanResult(
-                    success=False,
-                    data=all_results,
-                    error_msg="扫描已中止"
-                )
-                
+                if self._stopped:
+                    self.logger.info("扫描被中断，部分任务可能未完成。")
+
+            # 清理 _executor 引用
+            self._executor = None
+
         except Exception as e:
-            total_elapsed = time.time() - start_time
-            self.logger.error(f"执行扫描时出错: {str(e)}", exc_info=True)
-            return ScanResult(
-                success=False,
-                data=all_results,
-                error_msg=f"扫描错误: {str(e)}",
-                metadata={"scan_time": int(total_elapsed)}
-            )
-    
+            self.logger.error(f"Web风险扫描执行期间发生严重错误: {str(e)}", exc_info=True)
+            return ScanResult(success=False, data=all_results, error_msg=str(e), metadata=self.get_scan_metadata())
+            
+        end_time = time.time()
+        duration = int(end_time - start_time)
+        
+        summary_message = f"扫描完成，总用时: {duration // 60}分{duration % 60}秒"
+        self.logger.info(summary_message)
+        self.logger.info(f"结果统计: {json.dumps(self.result_counts)}")
+        
+        # 更新最终进度
+        self.update_progress(100, summary_message)
+        
+        return ScanResult(success=True, data=all_results, metadata=self.get_scan_metadata())
+
     def stop(self) -> None:
         """
         停止扫描
@@ -978,35 +892,55 @@ class WebRiskScanner(BaseScanner):
         if not self._stopped:
             stop_start_time = time.time()
             self.logger.info("正在停止Web风险扫描...")
+            
+            # 立即设置停止标志，所有插件和扫描逻辑应检查此标志
             self._stopped = True
             
-            # 取消未完成的任务
-            cancelled_count = 0
-            for future in self._futures:
-                if not future.done() and not future.cancelled():
-                    future.cancel()
-                    cancelled_count += 1
-            
-            # 关闭所有会话
-            for session in self._sessions:
+            # 尝试优雅地关闭线程池
+            if hasattr(self, '_executor') and self._executor:
+                self.logger.info("正在请求关闭扫描线程池 (等待最多3秒)...")
+                # cancel_futures=True 将尝试取消队列中未开始的任务
+                # shutdown(wait=True)会等待正在执行的任务完成（除非它们自己检查_stopped并退出）
                 try:
-                    session.close()
-                except Exception as e:
-                    self.logger.error(f"关闭会话时出错: {str(e)}")
+                    self._executor.shutdown(wait=True, cancel_futures=True) 
+                    self.logger.info("扫描线程池已关闭。")
+                except Exception as e: # pylint: disable=broad-except
+                    self.logger.error(f"关闭扫描线程池时发生错误: {e}. 可能有任务未完全停止。")
+
+            # 停止所有插件
+            # 插件的stop方法应确保其内部任务尽快结束
+            if hasattr(self, 'loaded_plugins'):
+                for plugin_id, plugin_instance in self.loaded_plugins.items():
+                    if hasattr(plugin_instance, 'stop'):
+                        try:
+                            self.logger.info(f"正在停止插件: {plugin_id}...")
+                            plugin_instance.stop()
+                        except Exception as e:
+                            self.logger.error(f"停止插件 {plugin_id} 时出错: {str(e)}")
             
-            # 清理资源
-            self._futures.clear()
-            self._sessions.clear()
-            
-            stop_elapsed = time.time() - stop_start_time
-            self.logger.info(f"扫描已停止，取消了 {cancelled_count} 个未完成任务，用时 {stop_elapsed:.2f} 秒")
-            
-            # 更新进度状态
-            self.update_progress(100, f"扫描已手动停止，取消了 {cancelled_count} 个任务")
-            
-        # 调用父类的stop方法
-        super().stop()
-    
+            # 不再使用ctypes强制终止线程，因为这非常危险
+            # self.logger.info("ctypes线程终止逻辑已被移除以提高稳定性。")
+
+            # 清理会话和future列表 (以防万一)
+            # 这些应该在线程池关闭和插件停止后自然清理
+            cancelled_futures = 0
+            if hasattr(self, '_futures') and self._futures:
+                for future in self._futures:
+                    if not future.done():
+                        if future.cancel(): # cancel() 返回True如果成功取消
+                            cancelled_futures +=1
+                self._futures.clear()
+
+            if hasattr(self, '_sessions') and self._sessions:
+                for session in self._sessions:
+                    try:
+                        session.close()
+                    except: # pylint: disable=bare-except
+                        pass
+                self._sessions.clear()
+
+            self.logger.info(f"Web风险扫描停止请求处理完毕。取消了 {cancelled_futures} 个 futures。用时 {time.time() - stop_start_time:.2f} 秒。")
+
     def load_custom_data(self):
         """
         加载自定义数据
@@ -1022,8 +956,33 @@ class WebRiskScanner(BaseScanner):
         
         self.logger.debug("已加载自定义数据")
     
-    # 保留其他必要的方法，如detect_waf, scan_web_security_headers, check_vulnerabilities等
+    def get_scan_metadata(self) -> Dict[str, Any]:
+        """
+        获取扫描元数据
+        
+        Returns:
+            扫描元数据字典
+        """
+        # 构建 scan_config 字典，包含报告中期望的配置项
+        report_scan_config = {}
+        important_configs_for_report = [
+            "targets", "ports", "threads", "timeout", "verify_ssl", 
+            "follow_redirects", "scan_depth", "user_agent",
+            "scan_headers", "scan_ssl", "detect_waf", "custom_headers", "cookies"
+            # 可以根据需要添加更多配置项
+        ]
+        for key in important_configs_for_report:
+            if key in self.config:
+                report_scan_config[key] = self.config[key]
 
+        return {
+            "scanner_version": self.VERSION,
+            "scan_config": report_scan_config, # 使用 "scan_config" 作为键名
+            "total_urls_prepared": self._total_urls if hasattr(self, '_total_urls') else 'N/A',
+            "urls_scanned_completed": self._scanned_urls if hasattr(self, '_scanned_urls') else 'N/A',
+            "plugin_info": plugin_manager.get_plugin_info_list(enabled_only=True) # 更新调用
+        }
+    
     def detect_waf(self, url: str, session: requests.Session) -> Optional[str]:
         """
         检测WAF
@@ -1042,15 +1001,21 @@ class WebRiskScanner(BaseScanner):
             xss_payload = f"{url}?q=<script>alert(1)</script>"
             sqli_payload = f"{url}?id=1' OR '1'='1"
             
-            headers = {'User-Agent': self.config["user_agent"]}
+            # 使用 .get() 提供默认值，增加健壮性
+            user_agent = self.config.get("user_agent", 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36')
+            timeout = self.config.get("timeout", 10)
+            verify_ssl = self.config.get("verify_ssl", False)
+            follow_redirects = self.config.get("follow_redirects", True)
+            
+            headers = {'User-Agent': user_agent}
             
             for payload in [xss_payload, sqli_payload]:
                 response = session.get(
                     payload, 
                     headers=headers, 
-                    timeout=self.config["timeout"],
-                    verify=self.config["verify_ssl"],
-                    allow_redirects=self.config["follow_redirects"]
+                    timeout=timeout,
+                    verify=verify_ssl, # 使用获取的配置
+                    allow_redirects=follow_redirects # 使用获取的配置
                 )
                 
                 # 检查响应头和Cookie
@@ -1157,6 +1122,12 @@ class WebRiskScanner(BaseScanner):
         """
         results = []
         
+        # 从配置获取相关参数，增加健壮性
+        timeout = self.config.get("timeout", 10)
+        verify_ssl = self.config.get("verify_ssl", False)
+        follow_redirects = self.config.get("follow_redirects", True)
+        vuln_timeout = min(3, timeout) # 使用较短的超时时间
+
         # 对每种漏洞类型进行检查
         for vuln_type, paths in self.vuln_paths.items():
             # 检查是否停止
@@ -1172,12 +1143,11 @@ class WebRiskScanner(BaseScanner):
                     test_url = urllib.parse.urljoin(base_url, path)
                     
                     # 使用较短的超时时间
-                    vuln_timeout = min(3, self.config["timeout"])
                     response = session.get(
                         test_url,
-                        timeout=vuln_timeout,
-                        verify=self.config["verify_ssl"],
-                        allow_redirects=self.config["follow_redirects"]
+                        timeout=vuln_timeout, # 已在上面获取和计算
+                        verify=verify_ssl, # 使用获取的配置
+                        allow_redirects=follow_redirects # 使用获取的配置
                     )
                     
                     vuln_found = False
@@ -1334,12 +1304,20 @@ class WebRiskScanner(BaseScanner):
             progress: 当前进度百分比
             message: 进度消息
         """
-        if self._result_callback:
-            self._result_callback({
-                "check_type": "progress",
-                "progress": progress,
-                "message": message
-            })
+        # 调用基类的进度回调，确保进度能传递到UI
+        if self.progress_callback:
+            self.progress_callback(progress, message)
+        else:
+            super().update_progress(progress, message)
+        
+        # 不再直接调用自定义结果回调，避免重复更新
+        # 注释掉以下代码，防止多重回调冲突
+        # if self._result_callback:
+        #     self._result_callback({
+        #         "check_type": "progress",
+        #         "progress": progress,
+        #         "message": message
+        #     })
 
     def check_server_info(self, url: str, response: requests.Response) -> Dict[str, Any]:
         """
@@ -1452,7 +1430,8 @@ class WebRiskScanner(BaseScanner):
             # 获取配置参数
             timeout = min(self.config.get("timeout", 10), 5)  # 存活检测的超时时间更短
             verify_ssl = self.config.get("verify_ssl", False)
-            
+            follow_redirects = self.config.get("follow_redirects", True) # 从配置读取
+
             # 先尝试HEAD请求，更快且消耗更少资源
             try:
                 start_time = time.time()
@@ -1460,7 +1439,7 @@ class WebRiskScanner(BaseScanner):
                     url, 
                     timeout=timeout,
                     verify=verify_ssl,
-                    allow_redirects=True
+                    allow_redirects=follow_redirects # 使用配置值
                 )
                 response_time = time.time() - start_time
                 
@@ -1499,7 +1478,7 @@ class WebRiskScanner(BaseScanner):
                     url, 
                     timeout=timeout,
                     verify=verify_ssl,
-                    allow_redirects=True,
+                    allow_redirects=follow_redirects, # 使用配置值
                     stream=True  # 使用流式请求，避免下载大量数据
                 )
                 
@@ -1536,3 +1515,83 @@ class WebRiskScanner(BaseScanner):
             basic_result["error"] = str(e)
             basic_result["status_code"] = 0
             return False, basic_result 
+
+    def execute(self) -> ScanResult:
+        """
+        执行扫描
+        
+        Returns:
+            扫描结果
+        """
+        # 重置状态
+        self._stopped = False
+        self._scanned_urls = 0
+        self._total_urls = 0
+        self._sessions = []
+        self._futures = []
+        
+        # 清理线程池资源，确保干净重启
+        try:
+            import concurrent.futures
+            import gc
+            import sys
+            
+            # 强制垃圾回收，刷新内存中的对象引用
+            gc.collect()
+            
+            # 关闭所有未关闭的线程池
+            executors_found = 0
+            for obj in gc.get_objects():
+                if isinstance(obj, concurrent.futures.ThreadPoolExecutor):
+                    try:
+                        if not getattr(obj, '_shutdown', True):
+                            obj.shutdown(wait=False)
+                            executors_found += 1
+                    except Exception as e:
+                        self.logger.warning(f"关闭已存在的线程池时出错: {str(e)}")
+            
+            if executors_found > 0:
+                self.logger.info(f"已关闭 {executors_found} 个未关闭的线程池")
+                
+            # 重置concurrent.futures内部状态
+            if 'concurrent.futures' in sys.modules:
+                try:
+                    sys.modules['concurrent.futures']._shutdown = False
+                except:
+                    pass
+                
+        except Exception as e:
+            self.logger.warning(f"清理线程池资源时出错，但会继续扫描: {str(e)}")
+        
+        # 清理网络连接
+        try:
+            import socket
+            socket.setdefaulttimeout(10)  # 恢复正常超时设置
+            
+            # 重置请求库连接池
+            import requests
+            from urllib3.util.retry import Retry
+            requests.packages.urllib3.disable_warnings()
+            
+            # 安全地关闭连接池
+            try:
+                from requests.adapters import HTTPAdapter
+                adapter = HTTPAdapter()
+                if hasattr(adapter, 'close'):
+                    adapter.close()
+            except Exception as e:
+                self.logger.warning(f"关闭连接池适配器时出错: {str(e)}")
+                
+        except Exception as e:
+            self.logger.warning(f"清理网络连接时出错: {str(e)}")
+        
+        # 开始扫描
+        try:
+            return self.run_scan()
+        except Exception as e:
+            self.logger.error(f"执行扫描时出错: {str(e)}")
+            return ScanResult(
+                success=False,
+                data=[],
+                error_msg=f"扫描出错: {str(e)}"
+            ) 

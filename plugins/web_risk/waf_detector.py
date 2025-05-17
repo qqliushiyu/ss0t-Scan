@@ -18,7 +18,7 @@ class WAFDetector(WebRiskPlugin):
     NAME = "WAF检测"
     DESCRIPTION = "检测Web应用是否受到Web应用防火墙(WAF)保护"
     VERSION = "1.0.0"
-    AUTHOR = "ss0t-scna"
+    AUTHOR = "NetTools"
     CATEGORY = "信息收集"
     
     # 默认WAF签名

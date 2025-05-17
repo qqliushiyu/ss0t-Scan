@@ -60,41 +60,76 @@ def generate_html_report(data: List[Dict[str, Any]], metadata: Dict[str, Any], o
     alive_urls = metadata.get("alive_urls", []) or []  # 获取存活的URL列表
     scan_config = metadata.get("scan_config", {}) or {}
     plugin_info = metadata.get("plugin_info", []) or []
+    module_name = metadata.get("module", "Web风险扫描")
     
-    # 统计信息 - 只统计存活URL的问题
-    alive_data = [r for r in data if r.get("url", "") in alive_urls]
+    # 检查是否是POC扫描
+    is_poc_scan = module_name.lower() in ["poc漏洞扫描", "poc_vulnerability_scan"]
     
-    total_urls = len(set([r.get("url", "") for r in alive_data if "url" in r]))
-    total_vulns = len([r for r in alive_data if r.get("check_type") == "vulnerability" and r.get("status") == "vulnerable"])
-    total_headers = len([r for r in alive_data if r.get("check_type") == "security_header" and r.get("status") == "missing"])
-    total_issues = total_vulns + total_headers
-    
-    # 按URL分组 - 只处理存活的URL
-    url_results = {}
-    for item in alive_data:
-        url = item.get("url", "")
-        if not url:
-            continue
-        if url not in url_results:
-            url_results[url] = {
-                "vulnerabilities": [],
-                "headers": [],
-                "server_info": None,
-                "waf_info": None,
-                "ssl_info": None
-            }
+    # 针对POC扫描的特殊处理
+    if is_poc_scan:
+        # 对于POC扫描，所有结果都是相关的
+        alive_data = data
         
-        check_type = item.get("check_type", "")
-        if check_type == "vulnerability" and item.get("status") == "vulnerable":
-            url_results[url]["vulnerabilities"].append(item)
-        elif check_type == "security_header":
-            url_results[url]["headers"].append(item)
-        elif check_type == "server_info":
-            url_results[url]["server_info"] = item
-        elif check_type == "waf":
-            url_results[url]["waf_info"] = item
-        elif check_type == "ssl":
-            url_results[url]["ssl_info"] = item
+        # 统计信息
+        total_urls = len(set([r.get("url", "") for r in alive_data if "url" in r]))
+        total_vulns = len([r for r in alive_data if r.get("status") == "vulnerable"])
+        total_headers = 0  # POC扫描不关注headers
+        total_issues = total_vulns
+        
+        # 按URL分组
+        url_results = {}
+        for item in alive_data:
+            url = item.get("url", "")
+            if not url:
+                continue
+            if url not in url_results:
+                url_results[url] = {
+                    "vulnerabilities": [],
+                    "headers": [],
+                    "server_info": None,
+                    "waf_info": None,
+                    "ssl_info": None
+                }
+            
+            # 只处理漏洞结果
+            if item.get("status") == "vulnerable":
+                url_results[url]["vulnerabilities"].append(item)
+    else:
+        # 原有的Web风险扫描逻辑
+        # 统计信息 - 只统计存活URL的问题
+        alive_data = [r for r in data if r.get("url", "") in alive_urls]
+        
+        total_urls = len(set([r.get("url", "") for r in alive_data if "url" in r]))
+        total_vulns = len([r for r in alive_data if r.get("check_type") == "vulnerability" and r.get("status") == "vulnerable"])
+        total_headers = len([r for r in alive_data if r.get("check_type") == "security_header" and r.get("status") == "missing"])
+        total_issues = total_vulns + total_headers
+        
+        # 按URL分组 - 只处理存活的URL
+        url_results = {}
+        for item in alive_data:
+            url = item.get("url", "")
+            if not url:
+                continue
+            if url not in url_results:
+                url_results[url] = {
+                    "vulnerabilities": [],
+                    "headers": [],
+                    "server_info": None,
+                    "waf_info": None,
+                    "ssl_info": None
+                }
+            
+            check_type = item.get("check_type", "")
+            if check_type == "vulnerability" and item.get("status") == "vulnerable":
+                url_results[url]["vulnerabilities"].append(item)
+            elif check_type == "security_header":
+                url_results[url]["headers"].append(item)
+            elif check_type == "server_info":
+                url_results[url]["server_info"] = item
+            elif check_type == "waf":
+                url_results[url]["waf_info"] = item
+            elif check_type == "ssl":
+                url_results[url]["ssl_info"] = item
     
     # 生成HTML内容
     html_content = f"""<!DOCTYPE html>
@@ -102,7 +137,7 @@ def generate_html_report(data: List[Dict[str, Any]], metadata: Dict[str, Any], o
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Web风险扫描报告</title>
+    <title>{module_name}报告</title>
     <style>
         body {{
             font-family: 'Microsoft YaHei', Arial, sans-serif;
@@ -224,7 +259,7 @@ def generate_html_report(data: List[Dict[str, Any]], metadata: Dict[str, Any], o
 </head>
 <body>
     <div class="header">
-        <h1>Web风险扫描报告</h1>
+        <h1>{module_name}报告</h1>
         <p>生成时间: {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}</p>
     </div>
     
@@ -239,10 +274,12 @@ def generate_html_report(data: List[Dict[str, Any]], metadata: Dict[str, Any], o
                 <h3>漏洞</h3>
                 <p style="font-size: 24px; font-weight: bold;">{total_vulns}</p>
             </div>
+            {'' if is_poc_scan else f'''
             <div class="summary-box {('warning' if total_headers > 0 else 'safe')}">
                 <h3>配置问题</h3>
                 <p style="font-size: 24px; font-weight: bold;">{total_headers}</p>
             </div>
+            '''}
             <div class="summary-box">
                 <h3>URL数量</h3>
                 <p style="font-size: 24px; font-weight: bold;">{total_urls}</p>
@@ -726,8 +763,42 @@ def generate_report(data: List[Dict[str, Any]], metadata: Dict[str, Any],
         logger.warning("没有扫描结果数据，无法生成报告")
         return None
     
+    # 获取模块名称，默认为web_risk_scan
+    module_name = metadata.get("module", "web_risk_scan").lower().replace(" ", "_")
+    
     # 获取存活URL列表
     alive_urls = metadata.get("alive_urls", [])
+    
+    # 如果是POC扫描模块并且没有存活URLs，则从数据中提取URLs
+    if module_name == "poc漏洞扫描" or module_name == "poc_vulnerability_scan":
+        # 将模块名称标准化为英文
+        module_name = "poc_vulnerability_scan"
+        
+        # 如果没有存活URLs，从结果中提取
+        if not alive_urls:
+            alive_urls = []
+            target_urls = metadata.get("targets", [])
+            # 从数据中提取URL
+            for item in data:
+                if isinstance(item, dict) and "url" in item:
+                    url = item.get("url")
+                    if url and url not in alive_urls:
+                        alive_urls.append(url)
+            
+            # 如果还是没有URL，使用targets作为URL
+            if not alive_urls and target_urls:
+                # 确保targets中的每个URL都有http前缀
+                alive_urls = []
+                for target in target_urls:
+                    if target:
+                        if not target.startswith(('http://', 'https://')):
+                            target = 'http://' + target
+                        alive_urls.append(target)
+                        
+            # 更新元数据
+            metadata["alive_urls"] = alive_urls
+    
+    # 如果仍然没有存活URL，记录警告（但仍会生成报告）
     if not alive_urls:
         logger.warning("没有存活的URL，但仍将生成报告")
     else:
@@ -737,7 +808,7 @@ def generate_report(data: List[Dict[str, Any]], metadata: Dict[str, Any],
     ensure_dir(output_dir)
     
     # 生成文件名
-    html_filename = get_report_filename("web_risk_scan", "html")
+    html_filename = get_report_filename(module_name, "html")
     html_path = os.path.join(output_dir, html_filename)
     
     # 生成HTML报告

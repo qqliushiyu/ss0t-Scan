@@ -30,6 +30,11 @@ class Traceroute(BaseScanner):
         """初始化路由追踪模块"""
         super().__init__(config)
         self._stopped = False
+        self._hop_callback = None  # 添加每一跳结果的回调函数
+    
+    def set_hop_callback(self, callback) -> None:
+        """设置每一跳结果的回调函数"""
+        self._hop_callback = callback
     
     def validate_config(self) -> Tuple[bool, Optional[str]]:
         """
@@ -40,7 +45,7 @@ class Traceroute(BaseScanner):
         """
         valid_keys = {
             "target",        # 目标主机（IP 或域名）
-            "max_hops",      # 最大跳数
+            "max_hops",      # 最大跳数 (0 表示自适应)
             "timeout",       # 超时时间
             "method",        # 追踪方法: icmp, udp
             "port",          # UDP 端口
@@ -64,9 +69,12 @@ class Traceroute(BaseScanner):
             except socket.gaierror:
                 return False, f"无效的目标: {target}"
         
-        # 设置默认值
-        if "max_hops" not in self.config:
-            self.config["max_hops"] = 30
+        # 设置默认值 / 验证范围
+        # max_hops: 0 表示自适应，否则应为正整数
+        max_hops_val = self.config.get("max_hops", 0) # 默认0为自适应
+        if not isinstance(max_hops_val, int) or max_hops_val < 0:
+            return False, f"最大跳数必须是非负整数，0表示自适应，当前值: {max_hops_val}"
+        self.config["max_hops"] = max_hops_val # 确保存储的是整数
         
         if "timeout" not in self.config:
             self.config["timeout"] = 1.0
@@ -122,7 +130,7 @@ class Traceroute(BaseScanner):
             追踪结果列表
         """
         target = self.config["target"]
-        max_hops = self.config["max_hops"]
+        max_hops = self.config["max_hops"] # 此时 max_hops 可能为 0
         timeout = self.config["timeout"]
         method = self.config["method"]
         probe_count = self.config["probe_count"]
@@ -136,7 +144,8 @@ class Traceroute(BaseScanner):
             cmd = ["tracert"]
             if not self.config["resolve"]:
                 cmd.append("-d")
-            cmd.extend(["-h", str(max_hops)])
+            if max_hops > 0: # 仅当 max_hops > 0 时添加 -h 参数
+                cmd.extend(["-h", str(max_hops)])
             cmd.extend(["-w", str(int(timeout * 1000))])
             cmd.append(target)
         
@@ -144,7 +153,8 @@ class Traceroute(BaseScanner):
             cmd = ["traceroute"]
             if not self.config["resolve"]:
                 cmd.append("-n")
-            cmd.extend(["-m", str(max_hops)])
+            if max_hops > 0: # 仅当 max_hops > 0 时添加 -m 参数
+                cmd.extend(["-m", str(max_hops)])
             cmd.extend(["-w", str(int(timeout))])
             cmd.extend(["-q", str(probe_count)])
             
@@ -159,7 +169,8 @@ class Traceroute(BaseScanner):
             cmd = ["traceroute"]
             if not self.config["resolve"]:
                 cmd.append("-n")
-            cmd.extend(["-m", str(max_hops)])
+            if max_hops > 0: # 仅当 max_hops > 0 时添加 -m 参数
+                cmd.extend(["-m", str(max_hops)])
             cmd.extend(["-w", str(int(timeout))])
             cmd.extend(["-q", str(probe_count)])
             
@@ -221,6 +232,17 @@ class Traceroute(BaseScanner):
                         
                         results.append(hop_result)
                         hop = hop_num
+                        
+                        # 实时回调每一跳的结果
+                        if self._hop_callback:
+                            self._hop_callback(hop_result)
+                        
+                        # 更新进度
+                        if self.progress_callback:
+                            current_max_hops = max_hops if max_hops > 0 else hop_num + 15 # 估算
+                            if current_max_hops == 0 : current_max_hops = 30 # 防止除零
+                            percent = min(int((hop_num / current_max_hops) * 100), 99)
+                            self.progress_callback(percent, f"已追踪到第 {hop_num} 跳")
                 
                 else:  # Linux/macOS
                     # Unix 格式: " 1  192.168.1.1 (192.168.1.1)  1.123 ms  1.456 ms  1.789 ms"
@@ -247,6 +269,17 @@ class Traceroute(BaseScanner):
                         
                         results.append(hop_result)
                         hop = hop_num
+                        
+                        # 实时回调每一跳的结果
+                        if self._hop_callback:
+                            self._hop_callback(hop_result)
+                        
+                        # 更新进度
+                        if self.progress_callback:
+                            current_max_hops = max_hops if max_hops > 0 else hop_num + 15 # 估算
+                            if current_max_hops == 0 : current_max_hops = 30 # 防止除零
+                            percent = min(int((hop_num / current_max_hops) * 100), 99)
+                            self.progress_callback(percent, f"已追踪到第 {hop_num} 跳")
             
             process.wait()
             
@@ -312,4 +345,13 @@ class Traceroute(BaseScanner):
     def stop(self) -> None:
         """停止追踪"""
         self._stopped = True
-        super().stop() 
+        super().stop()
+    
+    def execute(self) -> ScanResult:
+        """
+        执行扫描，BaseScanner 定义的方法
+        
+        Returns:
+            扫描结果
+        """
+        return self.run_scan() 

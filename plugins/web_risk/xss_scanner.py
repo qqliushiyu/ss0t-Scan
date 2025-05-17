@@ -19,7 +19,7 @@ class XSSScanner(WebRiskPlugin):
     NAME = "XSS漏洞检测"
     DESCRIPTION = "检测Web应用是否存在跨站脚本攻击漏洞"
     VERSION = "1.0.0"
-    AUTHOR = "ss0t-scna"
+    AUTHOR = "NetTools"
     CATEGORY = "漏洞检测"
     
     # XSS测试负载

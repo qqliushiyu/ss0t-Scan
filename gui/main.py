@@ -45,18 +45,27 @@ from gui.panels.web_risk_scan_panel import WebRiskScanPanel
 from gui.panels.web_dir_scan_panel import WebDirScanPanel
 from gui.panels.poc_scan_panel import POCScanPanel
 from gui.panels.bruteforce_panel import BruteforcePanel
+from gui.panels.report_manager_panel import ReportManagerPanel
+
+# 获取项目根目录的绝对路径
+PROJECT_ROOT = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
+
+# 确保logs目录存在
+LOGS_DIR = os.path.join(PROJECT_ROOT, "logs")
+if not os.path.exists(LOGS_DIR):
+    os.makedirs(LOGS_DIR)
 
 # 配置日志
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('logs/gui.log'),
+        logging.FileHandler(os.path.join(LOGS_DIR, 'gui.log'), encoding='utf-8'),
         logging.StreamHandler()
     ]
 )
 
-logger = logging.getLogger("ss0t-scna.gui")
+logger = logging.getLogger("nettools.gui")
 
 class PluginConfigLoaderThread(QThread):
     """插件配置加载线程"""
@@ -222,6 +231,10 @@ class MainWindow(QMainWindow):
             # 爆破扫描
             bruteforce_panel = BruteforcePanel()
             self.tab_widget.addTab(bruteforce_panel, "爆破扫描")
+            
+            # 报告管理
+            report_manager_panel = ReportManagerPanel()
+            self.tab_widget.addTab(report_manager_panel, "报告管理")
             
             # 其他模块可以在这里添加...
             
@@ -495,8 +508,11 @@ class MainWindow(QMainWindow):
 
 def main():
     """主函数"""
-    # 确保日志目录存在
-    os.makedirs('logs', exist_ok=True)
+    # 确保使用项目根目录的绝对路径创建日志目录，而不是相对路径
+    os.makedirs(LOGS_DIR, exist_ok=True)
+    
+    # 将当前工作目录切换到项目根目录，确保所有模块能找到正确的路径
+    os.chdir(PROJECT_ROOT)
     
     # 创建应用
     app = QApplication(sys.argv)

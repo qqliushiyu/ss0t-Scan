@@ -123,6 +123,125 @@ python cli/main.py --help
 ss0t-scna-cli host-scan --target 192.168.1.0/24
 ```
 
+### 命令行工具详细使用示例
+
+#### 查看可用模块
+
+```bash
+# 列出所有可用的扫描模块
+python cli/main.py list
+
+# 使用详细模式查看更多信息
+python cli/main.py list -v
+```
+
+#### 主机扫描
+
+```bash
+# 扫描单个IP
+python cli/main.py scan -m hostscanner -t 192.168.1.1
+
+# 扫描IP段
+python cli/main.py scan -m hostscanner -t 192.168.1.1/24
+
+# 从文件加载目标进行扫描
+python cli/main.py scan -m hostscanner -tf targets.txt
+
+# 指定线程数和超时时间
+python cli/main.py scan -m hostscanner -t 192.168.1.0/24 --threads 10 --timeout 5
+
+# 导出结果到特定文件
+python cli/main.py scan -m hostscanner -t 192.168.1.0/24 -o results/host_scan.csv
+```
+
+#### 端口扫描
+
+```bash
+# 扫描单个IP的特定端口
+python cli/main.py scan -m portscanner -t 192.168.1.1 -p 80,443,8080
+
+# 扫描IP段的常用端口
+python cli/main.py scan -m portscanner -t 192.168.1.0/24 -p 1-1000
+
+# 指定线程数进行快速扫描
+python cli/main.py scan -m portscanner -t 192.168.1.0/24 -p 22,80,443 --threads 50
+
+# 导出为JSON格式
+python cli/main.py scan -m portscanner -t 192.168.1.100 -p 1-65535 -o results/ports.json --output-type json
+```
+
+#### Web扫描
+
+```bash
+# 扫描单个网站
+python cli/main.py scan -m webscanner -t https://example.com
+
+# 扫描多个网站(从文件导入)
+python cli/main.py scan -m webscanner -tf website_list.txt
+
+# 目录扫描
+python cli/main.py scan -m dirscan -t https://example.com --threads 5
+```
+
+#### DNS检测
+
+```bash
+# 查询单个域名的DNS记录
+python cli/main.py scan -m dnsscanner -t example.com
+
+# 批量查询DNS记录
+python cli/main.py scan -m dnsscanner -tf domains.txt
+```
+
+#### 路由追踪
+
+```bash
+# 追踪到目标的路由
+python cli/main.py scan -m traceroute -t 8.8.8.8
+
+# 导出为Excel格式
+python cli/main.py scan -m traceroute -t 8.8.8.8 -o trace_result.xlsx --output-type xlsx
+```
+
+#### 安全扫描
+
+```bash
+# 执行POC扫描
+python cli/main.py scan -m pocscanner -t https://example.com
+
+# 使用凭据爆破
+python cli/main.py scan -m bruteforce -t 192.168.1.100 -p 22 --params '{"username":"root","password_file":"passwords.txt"}'
+```
+
+#### 配置管理
+
+```bash
+# 显示所有配置
+python cli/main.py config show
+
+# 显示特定配置节
+python cli/main.py config show -s general
+
+# 获取特定配置项
+python cli/main.py config get -s general -k threads
+
+# 设置配置项
+python cli/main.py config set -s general -k threads -v 20
+```
+
+#### 高级用法
+
+```bash
+# 使用详细输出模式
+python cli/main.py scan -m hostscanner -t 192.168.1.0/24 -v
+
+# 使用自定义配置文件
+python cli/main.py --config custom_config.ini scan -m portscanner -t 192.168.1.1 -p 80,443
+
+# 组合多个参数进行复杂扫描
+python cli/main.py scan -m webscanner -t https://example.com --threads 10 --timeout 30 -o web_scan_result.json --output-type json -v
+```
+
 ### 基本界面操作
 
 1. 启动GUI后，选择所需的功能模块标签页
